@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import StockCard from "@/components/StockCard";
 
 export default async function StocksPage() {
   const { data: companies, error } = await supabase
@@ -9,35 +10,33 @@ export default async function StocksPage() {
   if (error) {
     return (
       <main className="min-h-screen bg-black text-white p-10">
-        Error loading stocks: {error.message}
+        <p className="text-red-400">Error loading stocks: {error.message}</p>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-black text-white p-10">
-      <h1 className="text-5xl font-bold mb-10">PSX Stocks</h1>
+    <main className="min-h-screen bg-black text-white">
+      <div className="border-b border-gray-800 px-8 py-4 flex items-center justify-between">
+        <Link href="/" className="text-sm text-gray-500 hover:text-white transition-colors">
+          Home
+        </Link>
+        <Link href="/sectors" className="text-xs font-mono text-blue-400 hover:text-blue-300 transition-colors uppercase tracking-widest">
+          Sector Intelligence
+        </Link>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {companies?.map((company) => (
-          <Link
-            key={company.id}
-            href={`/stocks/${company.symbol}`}
-            className="border border-gray-700 rounded-2xl p-6 bg-gray-900 block hover:border-green-400 transition"
-          >
-            <h2 className="text-3xl font-bold mb-2">
-              {company.symbol}
-            </h2>
+      <div className="px-8 pt-10 pb-6 border-b border-gray-800">
+        <p className="text-xs text-gray-600 font-mono uppercase tracking-widest mb-2">PSX Listed Companies</p>
+        <h1 className="text-4xl font-bold text-white">Stocks</h1>
+      </div>
 
-            <p className="text-gray-300 text-lg">
-              {company.company_name}
-            </p>
-
-            <p className="text-green-400 mt-3">
-              {company.sector}
-            </p>
-          </Link>
-        ))}
+      <div className="p-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {companies?.map((company) => (
+            <StockCard key={company.id} company={company} />
+          ))}
+        </div>
       </div>
     </main>
   );
