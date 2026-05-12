@@ -1,6 +1,6 @@
 import Link from "next/link";
-import PageContainer from "@/Components/layout/PageContainer";
-import SectionTitle from "@/Components/ui/SectionTitle";
+import PageContainer from "@/components/layout/PageContainer";
+import SectionTitle from "@/components/ui/SectionTitle";
 
 const MODULES = [
   {

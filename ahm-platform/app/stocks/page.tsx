@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { supabase } from "@/lib/supabase";
-import StocksScreener from "@/Components/StocksScreener";
+import StocksScreener from "@/components/StocksScreener";
 
 export default async function StocksPage() {
   const { data: companies, error } = await supabase
