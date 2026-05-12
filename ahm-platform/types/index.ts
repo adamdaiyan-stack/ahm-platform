@@ -1,14 +1,5 @@
-// types/index.ts
-//
-// WHY THIS FILE EXISTS:
-// TypeScript types are contracts — they describe the shape of your data.
-// If we define the Company type inside StockCard.tsx, and then need the
-// same type in the detail page, we'd have to copy it. Two copies = two
-// places to update when the database changes. One file = one source of truth.
-//
-// HOW TO USE:
-// import { Company } from "@/types";
-// Then use `Company` as your type annotation anywhere in the project.
+// types/index.ts — single source of truth for the Company shape.
+// Update this when you add columns to the Supabase companies table.
 
 export type Company = {
   id: number;
@@ -17,13 +8,23 @@ export type Company = {
   sector: string;
   market_cap: number | null;
 
-  // --- Market data fields ---
-  // These come from the same `companies` table row.
-  // null means the value hasn't been populated yet in the database.
-  current_price: number | null;
-  change: number | null;         // absolute PKR change e.g. +1.25 or -0.80
-  change_percent: number | null; // percentage change e.g. +2.64 or -1.30
-  volume: number | null;         // shares traded today
-  pe_ratio: number | null;       // price-to-earnings ratio
-  dividend_yield: number | null; // annual dividend yield as a percentage
+  // Daily market data
+  current_price:   number | null;
+  change:          number | null;
+  change_percent:  number | null;
+  volume:          number | null;
+
+  // Fundamental metrics
+  pe_ratio:        number | null;
+  dividend_yield:  number | null;
+  eps:             number | null;
+  week_52_high:    number | null;
+  week_52_low:     number | null;
+
+  // Company profile
+  description:     string | null;
+  ceo:             string | null;
+  founded_year:    number | null;
+  website:         string | null;
+  employees:       number | null;
 };

@@ -12,7 +12,7 @@
 
 import { notFound } from "next/navigation";
 import { sectorMap } from "@/data/sectors";
-import SectorShell from "@/components/sectors/SectorShell";
+import SectorShell from "@/Components/sectors/SectorShell";
 import Link from "next/link";
 
 export default async function SectorPage({
