@@ -1,26 +1,66 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ── THEME TOKENS ───────────────────────────────────────────────
+   Dark is the default (data-theme="dark" or no attribute).
+   Light is applied when <html data-theme="light">.
+──────────────────────────────────────────────────────────────── */
+:root,
+[data-theme="dark"] {
+  --bg-primary:    #0D1117;
+  --bg-surface:    #161B22;
+  --bg-raised:     #1C2128;
+  --bg-border:     #30363D;
+  --text-primary:  #E6EDF3;
+  --text-secondary:#8B949E;
+  --text-disabled: #484F58;
+  --gain:          #22c55e;   /* emerald-500 equivalent */
+  --loss:          #ef4444;   /* red-500 equivalent */
+  --accent-green:  #22c55e;
+  --accent-amber:  #f59e0b;
 }
 
+[data-theme="light"] {
+  --bg-primary:    #FAF8F5;
+  --bg-surface:    #F2EFE9;
+  --bg-raised:     #ECEAE4;
+  --bg-border:     #E5E0D8;
+  --text-primary:  #1C1A17;
+  --text-secondary:#6B6560;
+  --text-disabled: #A8A39D;
+  --gain:          #15803D;   /* green-700 — darker for light bg */
+  --loss:          #B91C1C;   /* red-700 — darker for light bg */
+  --accent-green:  #1A6B4A;
+  --accent-amber:  #92400E;
+}
+
+/* ── TAILWIND V4 THEME EXTENSION ────────────────────────────── */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  /* Fonts from layout.tsx */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Semantic color utilities */
+  --color-base:         var(--bg-primary);
+  --color-surface:      var(--bg-surface);
+  --color-raised:       var(--bg-raised);
+  --color-border-theme: var(--bg-border);
+  --color-tx-primary:   var(--text-primary);
+  --color-tx-secondary: var(--text-secondary);
+  --color-tx-disabled:  var(--text-disabled);
+  --color-gain:         var(--gain);
+  --color-loss:         var(--loss);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* ── BASE STYLES ─────────────────────────────────────────────── */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+/* Smooth border transitions on theme switch */
+* {
+  border-color: var(--bg-border);
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }

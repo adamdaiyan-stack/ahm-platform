@@ -1,36 +1,36 @@
 import Link from "next/link";
 
 const NOTE = {
-  ticker: "HUBC", company: "Hub Power Company Limited", sector: "Power / IPP",
-  rating: "BUY", targetPrice: 182, currentPrice: 147.9, upside: 23.1,
-  analyst: "AHM Research Desk", publishedDate: "May 2025",
-  summary: `Hub Power Company (HUBC) remains one of the most compelling dividend plays on the KSE-100. Despite persistent circular debt headwinds, HUBC's capacity payment structure — backed by sovereign guarantees under long-term Power Purchase Agreements (PPAs) — provides robust earnings visibility through FY2030. We initiate with a BUY and a 12-month target price of PKR 182, implying 23% upside from current levels.`,
+  ticker: "UBL", company: "United Bank Limited", sector: "Banking",
+  rating: "BUY", targetPrice: 310, currentPrice: 248.5, upside: 24.7,
+  analyst: "AHM Research Desk", publishedDate: "May 2026",
+  summary: `United Bank Limited (UBL) is one of Pakistan's largest private sector banks with an asset base exceeding PKR 4 trillion. A combination of re-pricing tailwinds from the SBP rate-cut cycle, improving CASA ratios, strong fee income growth, and an undemanding valuation (P/B ~0.7x) makes UBL our top Banking sector pick. We initiate with BUY and a 12-month price target of PKR 310, implying ~25% upside.`,
   thesis: [
-    { title: "Capacity Payment Security", body: "HUBC earns capacity payments regardless of actual electricity dispatched, underpinned by government-backed PPAs. This creates a quasi-fixed-income revenue stream even during periods of low national demand." },
-    { title: "Attractive Dividend Yield", body: "HUBC has paid a consistent dividend for over a decade, with the trailing yield at ~10.4% — among the highest in the PSX Power sector. Free cash flow conversion is high given the capital-light nature of post-commissioning IPP operations." },
-    { title: "Thal Nova Expansion", body: "HUBC's 330MW coal plant (Thal Nova) adds incremental cash flows and diversifies the generation mix. Once fully operational at peak dispatch, Thal Nova could add PKR 8–10 per share to annual earnings." },
-    { title: "Circular Debt — Priced In", body: "Circular debt receivables (~PKR 60bn outstanding) are a known risk and largely reflected in the current valuation discount. Ongoing government settlement plans and IMF-linked energy sector reforms reduce tail risk over the medium term." },
-    { title: "SBP Rate Cut Tailwind", body: "As Pakistan's policy rate normalises from peak levels, discount rates applied to HUBC's DCF compress — mechanically driving target price upward. Each 100bps cut adds approximately PKR 8–10 to our fair value estimate." },
+    { title: "Rate Cut Beneficiary — Re-Pricing Upside", body: "As the SBP moves toward monetary easing, UBL's large government securities portfolio (~PKR 1.8 trillion) will see NIMs compress initially but the bank's high CASA ratio (>55%) provides a natural hedge. Fixed-rate long-duration bonds locked in during peak rates will continue generating superior income for 2–3 years." },
+    { title: "Dividend Yield Among Best in Banking", body: "UBL has maintained a consistent dividend payout with a trailing yield of ~9–10%. The board has signalled maintaining payout ratios above 70%, and strong capital ratios (CAR ~18%) support continued distributions even through a transition in the rate cycle." },
+    { title: "Fee Income and Digital Growth", body: "UBL's digital banking platform continues to scale. Fee, commission, and FX income now contribute ~22% of total revenue, reducing dependency on pure spread income. This mix improvement supports earnings resilience." },
+    { title: "Valuation Discount — Re-Rating Catalyst", body: "UBL trades at ~0.7x book value vs. a sector average of ~0.9x. As NPL provisions normalise and ROE recovers to 18%+ (vs. 14% in FY24), we expect a re-rating to at least 0.9x book, unlocking significant upside." },
+    { title: "Asset Quality Improving", body: "Gross NPL ratio has declined from a peak of 13.1% (FY21) to ~9.2% (FY25E), with coverage ratio at 90%+. The worst of the energy sector stress is behind UBL; the book is now heavily weighted toward government, consumer, and SME lending." },
   ],
   financials: [
-    { metric: "Revenue (PKR bn)",   fy23: "89.4",  fy24: "102.1", fy25e: "108.6" },
-    { metric: "EBITDA (PKR bn)",    fy23: "28.6",  fy24: "32.4",  fy25e: "35.1"  },
-    { metric: "Net Profit (PKR bn)",fy23: "14.2",  fy24: "15.8",  fy25e: "17.3"  },
-    { metric: "EPS (PKR)",         fy23: "12.40", fy24: "13.81", fy25e: "15.12" },
-    { metric: "DPS (PKR)",         fy23: "11.50", fy24: "12.50", fy25e: "13.50" },
-    { metric: "Dividend Yield (%)",fy23: "7.8%",  fy24: "8.5%",  fy25e: "9.1%"  },
-    { metric: "P/E (x)",           fy23: "11.9x", fy24: "10.7x", fy25e: "9.8x"  },
-    { metric: "EV/EBITDA (x)",     fy23: "8.4x",  fy24: "7.6x",  fy25e: "7.1x"  },
-    { metric: "EBITDA Margin (%)", fy23: "32.0%", fy24: "31.7%", fy25e: "32.3%" },
-    { metric: "Net Debt (PKR bn)", fy23: "42.1",  fy24: "38.7",  fy25e: "34.2"  },
+    { metric: "Net Interest Income (PKR bn)",fy23: "98.4",  fy24: "121.6", fy25e: "115.2" },
+    { metric: "Total Revenue (PKR bn)",      fy23: "122.1", fy24: "148.3", fy25e: "142.7" },
+    { metric: "Pre-Tax Profit (PKR bn)",     fy23: "52.4",  fy24: "68.1",  fy25e: "64.8"  },
+    { metric: "Net Profit (PKR bn)",         fy23: "35.8",  fy24: "44.2",  fy25e: "42.1"  },
+    { metric: "EPS (PKR)",                  fy23: "29.3",  fy24: "36.1",  fy25e: "34.4"  },
+    { metric: "DPS (PKR)",                  fy23: "22.0",  fy24: "26.0",  fy25e: "25.0"  },
+    { metric: "Dividend Yield (%)",         fy23: "8.9%",  fy24: "10.5%", fy25e: "10.1%" },
+    { metric: "P/E (x)",                    fy23: "8.5x",  fy24: "6.9x",  fy25e: "7.2x"  },
+    { metric: "P/B (x)",                    fy23: "0.9x",  fy24: "0.75x", fy25e: "0.70x" },
+    { metric: "ROE (%)",                    fy23: "14.1%", fy24: "16.8%", fy25e: "14.3%" },
   ],
-  valuation: { method: "DCF + Dividend Discount Model", wacc: "16.5%", terminalGrowth: "3.0%", dcfValue: "188", ddmValue: "176", blendedTarget: "182", notes: "Blended 60/40 DCF/DDM weighting. Sensitivity: target range PKR 155–210 across WACC 14–19% and terminal growth 2–4%." },
+  valuation: { method: "Gordon Growth Model + P/B Relative", coe: "18.0%", terminalROE: "16.0%", pbTarget: "0.9x", gbmValue: "315", pbValue: "304", blendedTarget: "310", notes: "Blended 50/50 GGM/P/B. Sensitivity: target range PKR 265–360 across COE 16–20% and terminal ROE 14–18%." },
   risks: [
-    { label: "Circular Debt Escalation", severity: "High",   detail: "If government receivable settlements stall, HUBC's cash flows could be delayed, pressuring dividend cover." },
-    { label: "PKR Depreciation",          severity: "Medium", detail: "O&M costs partially USD-linked. A sharp PKR devaluation could squeeze margins despite capacity payment indexation." },
-    { label: "Policy / Regulatory Risk",  severity: "Medium", detail: "PPA renegotiation pressure from NEPRA or government could reduce effective tariff rates at re-contracting." },
-    { label: "Coal Price Volatility",     severity: "Low",    detail: "Thal Nova's fuel cost is passed through under the PPA, limiting net exposure — but procurement delays could reduce dispatch." },
-    { label: "Dispatch Risk",             severity: "Low",    detail: "Capacity payments are fixed, but variable profit from energy payments depends on actual dispatch levels." },
+    { label: "NIM Compression from Rate Cuts", severity: "High",   detail: "Aggressive SBP easing faster than expected would compress spreads before CASA re-pricing benefits materialise." },
+    { label: "PKR Depreciation / FX Risk",      severity: "Medium", detail: "UBL has international operations. A significant PKR move affects consolidated financials and capital ratios." },
+    { label: "NPL Deterioration",               severity: "Medium", detail: "Slowing economy or energy sector stress could reverse the improving NPL trend, requiring higher provisioning." },
+    { label: "Regulatory / Super Tax",           severity: "Medium", detail: "Banking sector super-tax remains a drag on net profitability and could be extended beyond FY26." },
+    { label: "Credit Growth Slowdown",           severity: "Low",    detail: "If private sector credit demand remains subdued, fee and volume growth expectations may need revision." },
   ],
 };
 
@@ -41,7 +41,7 @@ const RATING_STYLE: Record<string, string> = {
 };
 const SEVERITY_COLOR: Record<string, string> = { High: "text-loss", Medium: "text-amber-500", Low: "text-tx-secondary" };
 
-export default function HUBCResearchNote() {
+export default function UBLResearchNote() {
   return (
     <main className="min-h-screen bg-base text-tx-primary">
       <div className="px-8 pt-10 pb-8 border-b border-border-theme">
@@ -110,21 +110,22 @@ export default function HUBCResearchNote() {
               </tbody>
             </table>
           </div>
-          <p className="text-xs text-tx-disabled font-mono mt-2">A = Actual · E = AHM Estimate · All figures PKR unless stated</p>
+          <p className="text-xs text-tx-disabled font-mono mt-2">A = Actual · E = AHM Estimate · Banking financials in PKR unless stated</p>
         </section>
 
         <section>
           <SectionLabel>Valuation</SectionLabel>
           <div className="bg-surface border border-border-theme rounded-xl p-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-5">
-              <ValItem label="Method"          value={NOTE.valuation.method} />
-              <ValItem label="WACC"            value={NOTE.valuation.wacc} />
-              <ValItem label="Terminal Growth" value={NOTE.valuation.terminalGrowth} />
-              <ValItem label="Target (Blend)"  value={"PKR " + NOTE.valuation.blendedTarget} accent />
+              <ValItem label="Method"         value={NOTE.valuation.method} />
+              <ValItem label="Cost of Equity" value={NOTE.valuation.coe} />
+              <ValItem label="Terminal ROE"   value={NOTE.valuation.terminalROE} />
+              <ValItem label="Target (Blend)" value={"PKR " + NOTE.valuation.blendedTarget} accent />
             </div>
             <div className="flex flex-wrap gap-6 pt-4 border-t border-border-theme">
-              <ValItem label="DCF Value" value={"PKR " + NOTE.valuation.dcfValue} />
-              <ValItem label="DDM Value" value={"PKR " + NOTE.valuation.ddmValue} />
+              <ValItem label="GGM Value"  value={"PKR " + NOTE.valuation.gbmValue} />
+              <ValItem label="P/B Value"  value={"PKR " + NOTE.valuation.pbValue} />
+              <ValItem label="P/B Target" value={NOTE.valuation.pbTarget} />
             </div>
             <p className="text-xs text-tx-disabled font-mono mt-4 leading-relaxed">{NOTE.valuation.notes}</p>
           </div>
@@ -149,11 +150,11 @@ export default function HUBCResearchNote() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <p className="text-xs font-mono text-gain/60 uppercase tracking-widest mb-1">Ready to Invest?</p>
-              <h3 className="text-tx-primary font-bold text-lg mb-1">Trade HUBC on PSX</h3>
+              <h3 className="text-tx-primary font-bold text-lg mb-1">Trade UBL on PSX</h3>
               <p className="text-tx-secondary text-sm">Open a brokerage account and start investing in under 48 hours.</p>
             </div>
             <div className="flex gap-3 flex-shrink-0">
-              <a href="https://wa.me/923001234567?text=I%20read%20the%20HUBC%20research%20note%20and%20want%20to%20open%20an%20account" target="_blank" rel="noopener noreferrer"
+              <a href="https://wa.me/923001234567?text=I%20read%20the%20UBL%20research%20note%20and%20want%20to%20open%20an%20account" target="_blank" rel="noopener noreferrer"
                 className="text-xs font-mono px-4 py-2.5 rounded-lg bg-emerald-500/15 text-gain border border-emerald-500/30 hover:bg-emerald-500/25 transition-all uppercase tracking-widest">WhatsApp Us</a>
               <Link href="/open-account" className="text-xs font-mono px-4 py-2.5 rounded-lg bg-tx-primary text-base hover:opacity-90 transition-opacity font-bold uppercase tracking-widest">Open Account →</Link>
             </div>
