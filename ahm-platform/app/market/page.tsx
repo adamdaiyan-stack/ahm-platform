@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { formatPrice, formatPercent, formatVolume, formatMarketCap } from "@/lib/formatters";
+import SectorTable, { type SectorRow } from "@/components/market/SectorTable";
 
 function getMarketStatus(): { label: string; open: boolean; pre: boolean } {
   const pkt = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Karachi" }));
@@ -143,40 +144,11 @@ export default async function MarketPage() {
       <div className="px-8 py-8">
         <div className="max-w-6xl">
           <p className="text-xs font-mono text-tx-disabled uppercase tracking-widest mb-4">Sector Performance</p>
-          <div className="bg-surface border border-border-theme rounded-xl overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border-theme">
-                  <th className="px-5 py-3 text-left text-xs font-mono text-tx-disabled uppercase tracking-widest">Sector</th>
-                  <th className="px-5 py-3 text-right text-xs font-mono text-tx-disabled uppercase tracking-widest">Avg Chg %</th>
-                  <th className="px-5 py-3 text-right text-xs font-mono text-tx-disabled uppercase tracking-widest">Stocks</th>
-                  <th className="px-5 py-3 text-right text-xs font-mono text-tx-disabled uppercase tracking-widest">Market Cap</th>
-                  <th className="px-5 py-3 text-right text-xs font-mono text-tx-disabled uppercase tracking-widest hidden md:table-cell">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sectors.map((s) => {
-                  const pos = s.avgChange != null && s.avgChange >= 0;
-                  const chgColor = s.avgChange == null ? "text-tx-disabled" : pos ? "text-gain" : "text-loss";
-                  return (
-                    <tr key={s.sector} className="border-b border-border-theme hover:bg-raised transition-colors">
-                      <td className="px-5 py-3 font-medium text-tx-primary">{s.sector}</td>
-                      <td className={"px-5 py-3 text-right font-mono text-sm tabular-nums " + chgColor}>
-                        {s.avgChange != null ? (s.avgChange >= 0 ? "+" : "") + s.avgChange.toFixed(2) + "%" : "—"}
-                      </td>
-                      <td className="px-5 py-3 text-right text-tx-secondary font-mono text-sm tabular-nums">{s.count}</td>
-                      <td className="px-5 py-3 text-right text-tx-secondary font-mono text-sm tabular-nums">
-                        {s.totalMarketCap > 0 ? formatMarketCap(s.totalMarketCap) : "—"}
-                      </td>
-                      <td className="px-5 py-3 text-right hidden md:table-cell">
-                        <Link href={"/stocks?sector=" + encodeURIComponent(s.sector)} className="text-xs font-mono text-tx-disabled hover:text-tx-primary transition-colors">View →</Link>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <SectorTable
+            sectors={sectors.map(({ sector, avgChange, totalMarketCap, count }): SectorRow => ({
+              sector, avgChange, totalMarketCap, count,
+            }))}
+          />
         </div>
       </div>
     </main>

@@ -6,12 +6,15 @@ import { useEffect, useState } from "react";
 import AHMLogo from "@/components/ui/AHMLogo";
 
 const NAV = [
-  { href: "/market",   label: "Market",   active: "text-violet-400",  hover: "hover:text-violet-300"  },
-  { href: "/stocks",   label: "Stocks",   active: "text-emerald-400", hover: "hover:text-emerald-300" },
-  { href: "/sectors",  label: "Sectors",  active: "text-blue-400",    hover: "hover:text-blue-300"    },
-  { href: "/research", label: "Research", active: "text-amber-400",   hover: "hover:text-amber-300"   },
-  { href: "/learn",    label: "Learn",    active: "text-tx-primary",  hover: "hover:text-tx-primary"  },
+  { href: "/market",   label: "Market"   },
+  { href: "/stocks",   label: "Stocks"   },
+  { href: "/sectors",  label: "Sectors"  },
+  { href: "/research", label: "Research" },
+  { href: "/learn",    label: "Learn"    },
 ];
+
+// Brand green: dark theme vs light theme
+const BRAND_GREEN = { dark: "#2EA043", light: "#1A6B4A" };
 
 const WA_LINK = "https://wa.me/923001234567?text=Hi%2C%20I%27d%20like%20to%20get%20daily%20PSX%20updates%20on%20WhatsApp";
 
@@ -43,7 +46,6 @@ export default function Header() {
   const pathname = usePathname();
   const [theme, setTheme] = useState<"dark" | "light">("dark");
 
-  // Read saved theme on mount
   useEffect(() => {
     const saved = localStorage.getItem("ahm-theme");
     const current = document.documentElement.getAttribute("data-theme");
@@ -57,9 +59,11 @@ export default function Header() {
     localStorage.setItem("ahm-theme", next);
   }
 
+  const brandGreen = BRAND_GREEN[theme];
+
   return (
     <header className="sticky top-0 z-50 bg-base border-b border-border-theme">
-      <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-6 h-14 flex items-stretch justify-between gap-4">
 
         {/* Brand */}
         <Link href="/" className="flex items-center gap-2.5 group flex-shrink-0">
@@ -69,22 +73,28 @@ export default function Header() {
           </span>
         </Link>
 
-        {/* Nav */}
-        <nav className="flex items-center gap-1 flex-1">
-          {NAV.map(({ href, label, active, hover }) => {
+        {/* Nav — links stretch full header height so the bottom bar sits flush */}
+        <nav className="flex items-stretch gap-1 flex-1">
+          {NAV.map(({ href, label }) => {
             const isActive =
-              href === "/"
-                ? pathname === "/"
-                : pathname === href || pathname.startsWith(href + "/");
+              pathname === href || pathname.startsWith(href + "/");
             return (
               <Link
                 key={href}
                 href={href}
-                className={`px-3 py-1.5 rounded-md text-xs font-mono uppercase tracking-widest transition-colors ${
-                  isActive ? active : `text-tx-secondary ${hover}`
+                className={`relative flex items-center px-3 text-xs font-mono uppercase tracking-widest transition-colors ${
+                  isActive
+                    ? "text-tx-primary font-semibold"
+                    : "text-tx-secondary hover:text-tx-primary"
                 }`}
               >
                 {label}
+                {isActive && (
+                  <span
+                    className="absolute bottom-0 left-1 right-1 h-0.5 rounded-t-full"
+                    style={{ backgroundColor: brandGreen }}
+                  />
+                )}
               </Link>
             );
           })}
