@@ -1,8 +1,7 @@
 @import "tailwindcss";
 
 /* ── THEME TOKENS ───────────────────────────────────────────────
-   Dark is the default (data-theme="dark" or no attribute).
-   Light is applied when <html data-theme="light">.
+   Dark is the default. Light applied via [data-theme="light"].
 ──────────────────────────────────────────────────────────────── */
 :root,
 [data-theme="dark"] {
@@ -13,10 +12,8 @@
   --text-primary:  #E6EDF3;
   --text-secondary:#8B949E;
   --text-disabled: #484F58;
-  --gain:          #22c55e;   /* emerald-500 equivalent */
-  --loss:          #ef4444;   /* red-500 equivalent */
-  --accent-green:  #22c55e;
-  --accent-amber:  #f59e0b;
+  --gain:          #22c55e;
+  --loss:          #ef4444;
 }
 
 [data-theme="light"] {
@@ -27,19 +24,19 @@
   --text-primary:  #1C1A17;
   --text-secondary:#6B6560;
   --text-disabled: #A8A39D;
-  --gain:          #15803D;   /* green-700 — darker for light bg */
-  --loss:          #B91C1C;   /* red-700 — darker for light bg */
-  --accent-green:  #1A6B4A;
-  --accent-amber:  #92400E;
+  --gain:          #15803D;
+  --loss:          #B91C1C;
 }
 
-/* ── TAILWIND V4 THEME EXTENSION ────────────────────────────── */
+/* ── FONTS: inline is fine — these never change ─────────────── */
 @theme inline {
-  /* Fonts from layout.tsx */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+}
 
-  /* Semantic color utilities */
+/* ── COLORS: NO inline — keeps var() references so theme toggle
+   propagates through the cascade at runtime ─────────────────── */
+@theme {
   --color-base:         var(--bg-primary);
   --color-surface:      var(--bg-surface);
   --color-raised:       var(--bg-raised);
@@ -51,16 +48,10 @@
   --color-loss:         var(--loss);
 }
 
-/* ── BASE STYLES ─────────────────────────────────────────────── */
+/* ── BASE ────────────────────────────────────────────────────── */
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   transition: background-color 0.15s ease, color 0.15s ease;
-}
-
-/* Smooth border transitions on theme switch */
-* {
-  border-color: var(--bg-border);
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import AHMLogo from "@/components/ui/AHMLogo";
 
 const NOTE = {
   ticker: "UBL", company: "United Bank Limited", sector: "Banking",
@@ -45,23 +46,27 @@ export default function UBLResearchNote() {
   return (
     <main className="min-h-screen bg-base text-tx-primary">
       <div className="px-8 pt-10 pb-8 border-b border-border-theme">
-        <div className="max-w-4xl">
-          <div className="flex items-center gap-2 text-xs font-mono text-tx-disabled mb-6">
-            <Link href="/research" className="hover:text-tx-secondary transition-colors">Research</Link>
-            <span>/</span><span className="text-tx-secondary">Equity Note</span>
+        <div className="max-w-4xl flex justify-between items-start gap-6">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 text-xs font-mono text-tx-disabled mb-6">
+              <Link href="/research" className="hover:text-tx-secondary transition-colors">Research</Link>
+              <span>/</span><span className="text-tx-secondary">Equity Note</span>
+            </div>
+            <div className="flex items-center gap-3 mb-4">
+              <span className={"text-xs font-mono font-bold px-3 py-1.5 rounded border uppercase tracking-widest " + RATING_STYLE[NOTE.rating]}>{NOTE.rating}</span>
+              <Link href={"/stocks/" + NOTE.ticker} className="text-xs font-mono px-3 py-1.5 rounded border border-border-theme text-tx-secondary hover:text-tx-primary hover:border-tx-secondary transition-colors">{NOTE.ticker} ↗</Link>
+              <span className="text-xs font-mono text-tx-disabled">{NOTE.sector}</span>
+            </div>
+            <h1 className="text-3xl font-bold text-tx-primary mb-2">{NOTE.company}</h1>
+            <p className="text-tx-secondary text-sm mb-6">{NOTE.analyst} · Published {NOTE.publishedDate}</p>
+            <div className="flex flex-wrap gap-6 items-end">
+              <div><p className="text-xs font-mono text-tx-disabled uppercase tracking-widest mb-1">Current Price</p><p className="text-2xl font-bold tabular-nums text-tx-primary">PKR {NOTE.currentPrice.toFixed(2)}</p></div>
+              <div><p className="text-xs font-mono text-tx-disabled uppercase tracking-widest mb-1">Target Price</p><p className="text-2xl font-bold text-gain tabular-nums">PKR {NOTE.targetPrice.toFixed(2)}</p></div>
+              <div><p className="text-xs font-mono text-tx-disabled uppercase tracking-widest mb-1">Upside</p><p className="text-2xl font-bold text-gain tabular-nums">+{NOTE.upside.toFixed(1)}%</p></div>
+            </div>
           </div>
-          <div className="flex items-center gap-3 mb-4">
-            <span className={"text-xs font-mono font-bold px-3 py-1.5 rounded border uppercase tracking-widest " + RATING_STYLE[NOTE.rating]}>{NOTE.rating}</span>
-            <Link href={"/stocks/" + NOTE.ticker} className="text-xs font-mono px-3 py-1.5 rounded border border-border-theme text-tx-secondary hover:text-tx-primary hover:border-tx-secondary transition-colors">{NOTE.ticker} ↗</Link>
-            <span className="text-xs font-mono text-tx-disabled">{NOTE.sector}</span>
-          </div>
-          <h1 className="text-3xl font-bold text-tx-primary mb-2">{NOTE.company}</h1>
-          <p className="text-tx-secondary text-sm mb-6">{NOTE.analyst} · Published {NOTE.publishedDate}</p>
-          <div className="flex flex-wrap gap-6 items-end">
-            <div><p className="text-xs font-mono text-tx-disabled uppercase tracking-widest mb-1">Current Price</p><p className="text-2xl font-bold tabular-nums text-tx-primary">PKR {NOTE.currentPrice.toFixed(2)}</p></div>
-            <div><p className="text-xs font-mono text-tx-disabled uppercase tracking-widest mb-1">Target Price</p><p className="text-2xl font-bold text-gain tabular-nums">PKR {NOTE.targetPrice.toFixed(2)}</p></div>
-            <div><p className="text-xs font-mono text-tx-disabled uppercase tracking-widest mb-1">Upside</p><p className="text-2xl font-bold text-gain tabular-nums">+{NOTE.upside.toFixed(1)}%</p></div>
-          </div>
+          {/* Letterhead logo */}
+          <AHMLogo height={36} className="flex-shrink-0 opacity-75 mt-1 hidden sm:block" />
         </div>
       </div>
 

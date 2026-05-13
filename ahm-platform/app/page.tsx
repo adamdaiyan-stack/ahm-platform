@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { formatPercent, formatVolume, formatPrice } from "@/lib/formatters";
+import AHMLogo from "@/components/ui/AHMLogo";
 
 function getMarketStatus() {
   const pkt = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Karachi" }));
@@ -59,6 +60,15 @@ export default async function Home() {
       {/* ── HERO ──────────────────────────────────────────── */}
       <div className="border-b border-border-theme px-8 pt-14 pb-12">
         <div className="max-w-6xl mx-auto">
+
+          {/* ── Logo + Tagline ─────────────────────────────── */}
+          <div className="flex flex-col items-center mb-10">
+            <AHMLogo height={48} className="mb-3" />
+            <p className="text-xs font-mono text-tx-secondary text-center tracking-widest">
+              Pakistan&apos;s equity intelligence platform — by AHM Securities.
+            </p>
+          </div>
+
           <div className="flex items-center gap-3 mb-6">
             <p className="text-xs font-mono text-tx-disabled uppercase tracking-widest">
               Pakistan Stock Exchange · KSE-100

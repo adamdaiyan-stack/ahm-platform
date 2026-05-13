@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import AHMLogo from "@/components/ui/AHMLogo";
 
 const NAV = [
   { href: "/market",   label: "Market",   active: "text-violet-400",  hover: "hover:text-violet-300"  },
@@ -61,12 +62,9 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between gap-4">
 
         {/* Brand */}
-        <Link href="/" className="flex items-center gap-2 group flex-shrink-0">
-          <span className="text-xs font-mono text-tx-secondary uppercase tracking-widest group-hover:text-tx-primary transition-colors">
-            AHM
-          </span>
-          <span className="w-px h-3 bg-border-theme" />
-          <span className="text-xs font-mono text-tx-secondary group-hover:text-tx-primary transition-colors">
+        <Link href="/" className="flex items-center gap-2.5 group flex-shrink-0">
+          <AHMLogo height={30} className="transition-opacity group-hover:opacity-80" />
+          <span className="hidden sm:block text-xs font-mono text-tx-secondary group-hover:text-tx-primary transition-colors">
             Platform
           </span>
         </Link>
