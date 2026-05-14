@@ -69,17 +69,15 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
               {SECTOR_SLUG[company.sector] ? (
                 <Link
                   href={"/sectors/" + SECTOR_SLUG[company.sector]}
-                  className="text-xs text-tx-secondary bg-surface border border-border-theme rounded-full px-3 py-1.5 hover:border-tx-secondary hover:text-tx-primary transition-colors"
-                >
-                  {company.sector} ↗
-                </Link>
-              ) : (
-                <Link
-                  href={"/stocks?sector=" + encodeURIComponent(company.sector)}
-                  className="text-xs text-tx-secondary bg-surface border border-border-theme rounded-full px-3 py-1.5 hover:border-tx-secondary transition-colors"
+                  className="inline-flex items-center gap-1 text-xs font-semibold font-mono text-gain bg-gain/10 border border-gain/30 rounded-full px-3 py-1.5 hover:bg-gain/20 hover:border-gain/60 transition-all"
                 >
                   {company.sector}
+                  <span className="text-[10px]">↗</span>
                 </Link>
+              ) : (
+                <span className="text-xs font-mono text-tx-disabled bg-surface border border-border-theme rounded-full px-3 py-1.5">
+                  {company.sector}
+                </span>
               )}
             </div>
             <p className="text-tx-secondary text-lg">{company.company_name}</p>

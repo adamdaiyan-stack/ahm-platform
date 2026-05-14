@@ -6,7 +6,7 @@ import type { SectorData } from "./types";
 
 const sector: SectorData = {
   slug: 'power-ipp',
-  name: 'Power / IPP',
+  name: 'Power',
   volume: 'Sector Intelligence Module · Volume V',
   subtitle: "A structured analytical framework covering how Pakistan's listed independent power producers generate capacity payments, what drives circular debt dynamics, and how HUBC, KAPCO, NPL, and NCPL differ structurally.",
   accentColor: '#e8c547',

@@ -5,6 +5,16 @@ import Link from "next/link";
 import type { Company } from "@/types";
 import { formatPrice, formatChange, formatPercent, formatVolume, formatMarketCap } from "@/lib/formatters";
 
+const SECTOR_SLUG: Record<string, string> = {
+  "Banking":    "banking",
+  "Automobile": "auto",
+  "Cement":     "cement",
+  "Fertiliser": "fertiliser",
+  "Oil & Gas":  "oil-gas",
+  "Power":      "power-ipp",
+  "Textiles":   "textiles",
+};
+
 type SortKey = keyof Pick<Company,
   "symbol"|"company_name"|"sector"|"current_price"|"change"|"change_percent"|
   "market_cap"|"pe_ratio"|"dividend_yield"|"volume"|"eps">;
@@ -211,7 +221,18 @@ function Row({ company }: { company: Company }) {
       <td className="px-4 py-3 text-tx-secondary text-xs leading-tight max-w-48">
         <Link href={"/stocks/" + company.symbol} className="hover:text-tx-primary transition-colors">{company.company_name}</Link>
       </td>
-      <td className="px-4 py-3"><span className="text-xs text-tx-disabled font-mono">{company.sector}</span></td>
+      <td className="px-4 py-3">
+        {SECTOR_SLUG[company.sector] ? (
+          <Link
+            href={"/sectors/" + SECTOR_SLUG[company.sector]}
+            className="text-xs font-mono text-tx-secondary hover:text-tx-primary hover:underline transition-colors"
+          >
+            {company.sector} ↗
+          </Link>
+        ) : (
+          <span className="text-xs text-tx-disabled font-mono">{company.sector}</span>
+        )}
+      </td>
       <td className={"px-4 py-3 text-right font-mono text-sm font-semibold tabular-nums " + (company.current_price !== null ? "text-tx-primary" : "text-tx-disabled")}>
         {formatPrice(company.current_price)}
       </td>

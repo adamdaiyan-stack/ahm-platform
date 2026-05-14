@@ -6,7 +6,7 @@ import type { SectorData } from "./types";
 
 const sector: SectorData = {
   slug: 'oil-gas',
-  name: 'Oil & Gas E&P',
+  name: 'Oil & Gas',
   volume: 'Sector Intelligence Module · Volume I',
   subtitle: 'A structured analytical framework covering how exploration and production companies operate in Pakistan, what drives the oil-linked and gas-linked earnings, and how OGDC, PPL, MARI, and POL differ structurally.',
   accentColor: '#d4a843',

@@ -6,7 +6,7 @@ import type { SectorData } from "./types";
 
 const sector: SectorData = {
   slug: 'auto',
-  name: 'Autos',
+  name: 'Automobile',
   volume: 'Sector Intelligence Module · Volume VI',
   subtitle: "A structured analytical framework covering how Pakistan's listed automakers and assemblers generate earnings, what drives volumes and margins, and how PSMC, INDU, ATLH, and HCAR differ structurally.",
   accentColor: '#e07b54',
