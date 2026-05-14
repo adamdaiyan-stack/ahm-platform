@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import { getCompaniesBySymbols } from "@/services/api/companies";
 import { formatPrice, formatPercent, formatMarketCap } from "@/lib/formatters";
 
 type Mode = "summary" | "research";
@@ -406,10 +406,8 @@ function CompaniesTab({ mode }: { mode: Mode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.from("companies")
-      .select("symbol,company_name,current_price,change_percent,market_cap,pe_ratio,dividend_yield,eps")
-      .in("symbol", BANK_SYMBOLS)
-      .then(({ data }) => { if (data) setLive(data as LiveCo[]); setLoading(false); });
+    getCompaniesBySymbols(BANK_SYMBOLS)
+      .then((data) => { setLive(data as LiveCo[]); setLoading(false); });
   }, []);
 
   const liveMap: Record<string, LiveCo> = {};

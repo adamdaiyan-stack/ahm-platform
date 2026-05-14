@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import { getKSE100Index, getTopGainers, getTopLosers } from "@/services/api/market";
 import { formatPercent, formatVolume, formatPrice } from "@/lib/formatters";
 import AHMLogo from "@/components/ui/AHMLogo";
 
@@ -34,18 +34,10 @@ const WA_LINK = "https://wa.me/923001234567?text=Hi%2C%20I%27d%20like%20to%20get
 export default async function Home() {
   const status = getMarketStatus();
 
-  const [{ data: idx }, { data: gainers }, { data: losers }] = await Promise.all([
-    supabase.from("market_index").select("*").eq("index_name", "KSE-100").single(),
-    supabase.from("companies")
-      .select("id, symbol, company_name, sector, current_price, change_percent")
-      .not("change_percent", "is", null)
-      .order("change_percent", { ascending: false })
-      .limit(4),
-    supabase.from("companies")
-      .select("id, symbol, company_name, sector, current_price, change_percent")
-      .not("change_percent", "is", null)
-      .order("change_percent", { ascending: true })
-      .limit(4),
+  const [idx, gainers, losers] = await Promise.all([
+    getKSE100Index(),
+    getTopGainers(4),
+    getTopLosers(4),
   ]);
 
   const level  = idx?.level          != null ? Number(idx.level)          : null;

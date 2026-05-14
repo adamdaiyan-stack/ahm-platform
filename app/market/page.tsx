@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import { getMarketPageData } from "@/services/api";
 import { formatPrice, formatPercent, formatVolume, formatMarketCap } from "@/lib/formatters";
 import SectorTable, { type SectorRow } from "@/components/market/SectorTable";
 
@@ -24,32 +24,9 @@ function fmtUpdated(iso: string | null): string {
 export default async function MarketPage() {
   const status = getMarketStatus();
 
-  const [{ data: index }, { data: gainers }, { data: losers }, { data: active }, { data: sectorRaw }] =
-    await Promise.all([
-      supabase.from("market_index").select("*").eq("index_name", "KSE-100").single(),
-      supabase.from("companies").select("id, symbol, company_name, sector, current_price, change_percent, market_cap")
-        .not("change_percent", "is", null).order("change_percent", { ascending: false }).limit(5),
-      supabase.from("companies").select("id, symbol, company_name, sector, current_price, change_percent, market_cap")
-        .not("change_percent", "is", null).order("change_percent", { ascending: true }).limit(5),
-      supabase.from("companies").select("id, symbol, company_name, sector, current_price, change_percent, volume")
-        .not("volume", "is", null).order("volume", { ascending: false }).limit(5),
-      supabase.from("companies").select("sector, change_percent, market_cap"),
-    ]);
+  const { index, gainers, losers, active, sectors } = await getMarketPageData();
 
-  type SectorStat = { sector: string; avgChange: number | null; totalMarketCap: number; count: number; withChange: number };
-  const sectorMap: Record<string, SectorStat> = {};
-  for (const row of sectorRaw ?? []) {
-    if (!sectorMap[row.sector]) sectorMap[row.sector] = { sector: row.sector, avgChange: null, totalMarketCap: 0, count: 0, withChange: 0 };
-    const s = sectorMap[row.sector];
-    s.count += 1;
-    if (row.market_cap) s.totalMarketCap += Number(row.market_cap);
-    if (row.change_percent != null) { s.avgChange = (s.avgChange ?? 0) + Number(row.change_percent); s.withChange += 1; }
-  }
-  const sectors = Object.values(sectorMap)
-    .map((s) => ({ ...s, avgChange: s.withChange > 0 && s.avgChange != null ? s.avgChange / s.withChange : null }))
-    .sort((a, b) => (b.totalMarketCap ?? 0) - (a.totalMarketCap ?? 0));
-
-  const idx = index as { level: number | null; change: number | null; change_percent: number | null; volume: number | null; advances: number | null; declines: number | null; unchanged: number | null; updated_at: string } | null;
+  const idx = index;
   const idxPositive = idx?.change != null && idx.change >= 0;
   const idxColor = idx?.change == null ? "text-tx-primary" : idxPositive ? "text-gain" : "text-loss";
   const idxPillClass = idx?.change == null

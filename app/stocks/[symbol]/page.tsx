@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import { getCompanyBySymbol, getCompanyPeers } from "@/services/api/companies";
+import { getStockCorporateData } from "@/services/api/research";
 import { formatPrice, formatChange, formatPercent, formatVolume, formatMarketCap } from "@/lib/formatters";
-import { Company } from "@/types";
+import { Company, Dividend } from "@/types";
 
-type Dividend = { id: number; symbol: string; financial_year: string; period: string | null; amount: number; announced_date: string | null; book_closure: string | null };
 type Announcement = { id: number; symbol: string; title: string; category: string | null; published_at: string; url: string | null };
 
 function fmtDate(iso: string | null): string {
@@ -27,7 +27,7 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
   const { symbol } = await params;
   const sym = symbol.toUpperCase();
 
-  const { data: company } = await supabase.from("companies").select("*").eq("symbol", sym).single<Company>();
+  const company = await getCompanyBySymbol(sym);
 
   if (!company) {
     return (
@@ -38,11 +38,9 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
     );
   }
 
-  const [{ data: peers }, { data: dividends }, { data: announcements }] = await Promise.all([
-    supabase.from("companies").select("id, symbol, company_name, current_price, change_percent, market_cap, pe_ratio")
-      .eq("sector", company.sector).neq("symbol", sym).order("market_cap", { ascending: false }).limit(6),
-    supabase.from("dividends").select("*").eq("symbol", sym).order("financial_year", { ascending: false }).limit(8),
-    supabase.from("announcements").select("*").eq("symbol", sym).order("published_at", { ascending: false }).limit(5),
+  const [peers, { dividends, announcements }] = await Promise.all([
+    getCompanyPeers(company.sector, sym, 6),
+    getStockCorporateData(sym),
   ]);
 
   const isPositive = company.change != null && company.change >= 0;
@@ -175,7 +173,7 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
                     </tr>
                   </thead>
                   <tbody>
-                    {(dividends as Dividend[]).map((d) => (
+                    {dividends.map((d) => (
                       <tr key={d.id} className="border-b border-border-theme hover:bg-raised transition-colors">
                         <td className="px-4 py-2.5 font-mono text-tx-primary text-xs">{d.financial_year}</td>
                         <td className="px-4 py-2.5 text-tx-secondary text-xs">{d.period ?? "—"}</td>

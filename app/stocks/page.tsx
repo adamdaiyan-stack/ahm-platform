@@ -1,20 +1,9 @@
 import { Suspense } from "react";
-import { supabase } from "@/lib/supabase";
+import { getAllCompanies } from "@/services/api/companies";
 import StocksScreener from "@/components/StocksScreener";
 
 export default async function StocksPage() {
-  const { data: companies, error } = await supabase
-    .from("companies")
-    .select("*")
-    .order("market_cap", { ascending: false });
-
-  if (error) {
-    return (
-      <main className="min-h-screen bg-base text-tx-primary p-10">
-        <p className="text-loss">Error loading stocks: {error.message}</p>
-      </main>
-    );
-  }
+  const companies = await getAllCompanies();
 
   return (
     <main className="min-h-screen bg-base text-tx-primary flex flex-col">
