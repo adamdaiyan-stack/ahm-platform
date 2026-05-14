@@ -275,14 +275,26 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
         <div className="px-8 py-8 border-t border-border-theme">
           <div className="max-w-6xl">
             <div className="flex items-center justify-between mb-5">
-              <p className="text-xs text-tx-disabled uppercase tracking-widest font-mono">
-                {company.sector} — Sector Peers
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-tx-disabled uppercase tracking-widest font-mono">
+                  Sector Peers
+                </p>
+                {SECTOR_SLUG[company.sector] ? (
+                  <Link
+                    href={"/sectors/" + SECTOR_SLUG[company.sector]}
+                    className="text-xs font-mono font-semibold text-tx-primary bg-surface border border-border-theme rounded-full px-3 py-1 hover:border-tx-secondary hover:bg-raised transition-all"
+                  >
+                    {company.sector} ↗
+                  </Link>
+                ) : (
+                  <span className="text-xs font-mono text-tx-secondary">{company.sector}</span>
+                )}
+              </div>
               <Link
-                href={"/stocks?sector=" + encodeURIComponent(company.sector)}
+                href={SECTOR_SLUG[company.sector] ? "/sectors/" + SECTOR_SLUG[company.sector] : "/stocks?sector=" + encodeURIComponent(company.sector)}
                 className="text-xs font-mono text-tx-secondary hover:text-tx-primary transition-colors"
               >
-                {"View all " + company.sector + " stocks →"}
+                {SECTOR_SLUG[company.sector] ? "View sector module →" : "View all " + company.sector + " stocks →"}
               </Link>
             </div>
 
