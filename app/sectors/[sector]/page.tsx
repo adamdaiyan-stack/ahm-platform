@@ -1,19 +1,12 @@
 // app/sectors/[sector]/page.tsx
-//
-// Dynamic route — one page for all sectors.
-// URL: /sectors/banking, /sectors/auto, /sectors/cement, etc.
-//
-// This is a Server Component. It looks up the sector data (a pure JS object,
-// no database needed — the content is static) and passes it to the
-// SectorShell client component for rendering.
-//
-// DATA FLOW:
-// URL param → sectorMap lookup → SectorData object → SectorShell renders it
-
 import { notFound } from "next/navigation";
 import { sectorMap } from "@/data/sectors";
 import SectorShell from "@/components/sectors/SectorShell";
+import BankingModule from "@/components/sectors/BankingModule";
 import Link from "next/link";
+
+// Sectors that have been redesigned with the new module format
+const REDESIGNED = new Set(["banking"]);
 
 export default async function SectorPage({
   params,
@@ -21,15 +14,28 @@ export default async function SectorPage({
   params: Promise<{ sector: string }>;
 }) {
   const { sector: slug } = await params;
-  const sector = sectorMap[slug];
 
+  // New-format sectors render their own full module (no wrapper needed)
+  if (REDESIGNED.has(slug)) {
+    return (
+      <div className="bg-base min-h-screen">
+        <div className="px-8 py-3 border-b border-border-theme">
+          <Link href="/sectors"
+            className="text-xs font-mono text-tx-disabled uppercase tracking-widest hover:text-tx-primary transition-colors">
+            ← All Sectors
+          </Link>
+        </div>
+        {slug === "banking" && <BankingModule />}
+      </div>
+    );
+  }
+
+  // Legacy sectors still use the old SectorShell + sector.css
+  const sector = sectorMap[slug];
   if (!sector) notFound();
 
   return (
-    // sector-root is the CSS scope wrapper — all sector.css rules are prefixed
-    // with .sector-root so they don't bleed into the rest of the app.
     <div className="sector-root">
-      {/* Back nav — outside the shell so it always shows above the hero */}
       <div
         style={{
           background: "var(--bg2)",
@@ -37,8 +43,7 @@ export default async function SectorPage({
           padding: "10px 60px",
         }}
       >
-        <Link
-          href="/sectors"
+        <Link href="/sectors"
           style={{
             fontFamily: "'JetBrains Mono', monospace",
             fontSize: "10px",
@@ -51,13 +56,11 @@ export default async function SectorPage({
           ← All Sectors
         </Link>
       </div>
-
       <SectorShell sector={sector} />
     </div>
   );
 }
 
-// Tell Next.js which slugs to pre-render at build time (optional but good practice)
 export async function generateStaticParams() {
   return Object.keys(sectorMap).map((slug) => ({ sector: slug }));
 }
