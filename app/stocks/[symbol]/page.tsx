@@ -11,6 +11,16 @@ function fmtDate(iso: string | null): string {
   return new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 }
 
+const SECTOR_SLUG: Record<string, string> = {
+  "Banking":    "banking",
+  "Automobile": "auto",
+  "Cement":     "cement",
+  "Fertiliser": "fertiliser",
+  "Oil & Gas":  "oil-gas",
+  "Power":      "power-ipp",
+  "Textiles":   "textiles",
+};
+
 const WA_BASE = "https://wa.me/923001234567";
 
 export default async function StockPage({ params }: { params: Promise<{ symbol: string }> }) {
@@ -56,10 +66,21 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
           <div>
             <div className="flex items-center gap-3 mb-1">
               <h1 className="text-5xl font-bold tracking-tight text-tx-primary">{company.symbol}</h1>
-              <Link href={"/stocks?sector=" + encodeURIComponent(company.sector)}
-                className="text-xs text-tx-secondary bg-surface border border-border-theme rounded-full px-3 py-1.5 hover:border-tx-secondary transition-colors">
-                {company.sector}
-              </Link>
+              {SECTOR_SLUG[company.sector] ? (
+                <Link
+                  href={"/sectors/" + SECTOR_SLUG[company.sector]}
+                  className="text-xs text-tx-secondary bg-surface border border-border-theme rounded-full px-3 py-1.5 hover:border-tx-secondary hover:text-tx-primary transition-colors"
+                >
+                  {company.sector} ↗
+                </Link>
+              ) : (
+                <Link
+                  href={"/stocks?sector=" + encodeURIComponent(company.sector)}
+                  className="text-xs text-tx-secondary bg-surface border border-border-theme rounded-full px-3 py-1.5 hover:border-tx-secondary transition-colors"
+                >
+                  {company.sector}
+                </Link>
+              )}
             </div>
             <p className="text-tx-secondary text-lg">{company.company_name}</p>
             {company.website && (
@@ -254,39 +275,68 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
         <div className="px-8 py-8 border-t border-border-theme">
           <div className="max-w-6xl">
             <div className="flex items-center justify-between mb-5">
-              <p className="text-xs text-tx-disabled uppercase tracking-widest font-mono">{company.sector} — Sector Peers</p>
-              <Link href={"/stocks?sector=" + encodeURIComponent(company.sector)} className="text-xs font-mono text-tx-secondary hover:text-tx-primary transition-colors">
-                {"View all " + company.sector + " stocks"}
+              <p className="text-xs text-tx-disabled uppercase tracking-widest font-mono">
+                {company.sector} — Sector Peers
+              </p>
+              <Link
+                href={"/stocks?sector=" + encodeURIComponent(company.sector)}
+                className="text-xs font-mono text-tx-secondary hover:text-tx-primary transition-colors"
+              >
+                {"View all " + company.sector + " stocks →"}
               </Link>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm border-collapse" style={{ minWidth: "600px" }}>
-                <thead>
-                  <tr className="border-b border-border-theme">
-                    {["Symbol", "Company", "Price", "Chg %", "Mkt Cap", "P/E"].map((h, i) => (
-                      <th key={h} className={"px-3 py-2 text-xs font-mono text-tx-disabled uppercase tracking-widest " + (i > 1 ? "text-right" : "text-left")}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {peers.map((peer) => {
-                    const peerPos   = peer.change_percent != null && peer.change_percent >= 0;
-                    const peerColor = peer.change_percent == null ? "text-tx-disabled" : peerPos ? "text-gain" : "text-loss";
-                    return (
-                      <tr key={peer.id} className="border-b border-border-theme hover:bg-surface transition-colors">
-                        <td className="px-3 py-2.5">
-                          <Link href={"/stocks/" + peer.symbol} className="font-mono font-bold text-tx-primary hover:text-gain transition-colors text-sm">{peer.symbol}</Link>
-                        </td>
-                        <td className="px-3 py-2.5 text-tx-secondary text-xs">{peer.company_name}</td>
-                        <td className="px-3 py-2.5 text-right font-mono text-sm text-tx-primary tabular-nums">{formatPrice(peer.current_price)}</td>
-                        <td className={"px-3 py-2.5 text-right font-mono text-xs tabular-nums " + peerColor}>{formatPercent(peer.change_percent)}</td>
-                        <td className="px-3 py-2.5 text-right font-mono text-xs text-tx-secondary tabular-nums">{formatMarketCap(peer.market_cap)}</td>
-                        <td className="px-3 py-2.5 text-right font-mono text-xs text-tx-secondary tabular-nums">{peer.pe_ratio != null ? peer.pe_ratio.toFixed(1) : "—"}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+
+            {/* Peer card grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {peers.map((peer) => {
+                const peerPos   = peer.change_percent != null && peer.change_percent >= 0;
+                const peerNeg   = peer.change_percent != null && peer.change_percent < 0;
+                const peerColor = peer.change_percent == null ? "text-tx-disabled"
+                                : peerPos ? "text-gain" : "text-loss";
+                const peerBg    = peerPos ? "bg-emerald-500/10" : peerNeg ? "bg-red-500/10" : "bg-surface";
+                return (
+                  <Link
+                    key={peer.id}
+                    href={"/stocks/" + peer.symbol}
+                    className="group bg-surface border border-border-theme rounded-xl p-4 hover:border-tx-secondary hover:bg-raised transition-all"
+                  >
+                    {/* Ticker + change */}
+                    <div className="flex items-start justify-between mb-1">
+                      <span className="font-mono font-bold text-tx-primary group-hover:text-gain transition-colors text-sm">
+                        {peer.symbol}
+                      </span>
+                      <span className={"text-xs font-mono font-semibold tabular-nums px-1.5 py-0.5 rounded " + peerBg + " " + peerColor}>
+                        {formatPercent(peer.change_percent)}
+                      </span>
+                    </div>
+                    {/* Company name */}
+                    <p className="text-tx-disabled text-xs truncate mb-3 leading-tight">
+                      {peer.company_name}
+                    </p>
+                    {/* Metrics */}
+                    <div className="space-y-1.5 border-t border-border-theme pt-3">
+                      <div className="flex justify-between">
+                        <span className="text-xs text-tx-disabled font-mono">Price</span>
+                        <span className="text-xs font-mono text-tx-primary font-semibold tabular-nums">
+                          {formatPrice(peer.current_price)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-xs text-tx-disabled font-mono">Mkt Cap</span>
+                        <span className="text-xs font-mono text-tx-secondary tabular-nums">
+                          {formatMarketCap(peer.market_cap)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-xs text-tx-disabled font-mono">P/E</span>
+                        <span className="text-xs font-mono text-tx-secondary tabular-nums">
+                          {peer.pe_ratio != null ? peer.pe_ratio.toFixed(1) + "x" : "—"}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </div>

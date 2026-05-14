@@ -25,6 +25,28 @@
   --nbp:  #d05e5e;
 }
 
+
+/* ── LIGHT THEME OVERRIDES ──────────────────────────────────── */
+[data-theme="light"] .sector-root,
+[data-theme="light"] .sector-root * {
+  --bg:     #FAF8F5;
+  --bg2:    #F2EFE9;
+  --bg3:    #ECEAE4;
+  --border: #E5E0D8;
+  --text:   #1C1A17;
+  --text2:  #6B6560;
+  --text3:  #A8A39D;
+  --accent:  #2D6FA3;
+  --accent2: #15803D;
+  --accent3: #92400E;
+  --accent4: #B91C1C;
+  --hbl:  #2D6FA3;
+  --ubl:  #15803D;
+  --mebl: #92400E;
+  --mcb:  #7C3D8C;
+  --nbp:  #B91C1C;
+}
+
 .sector-root * { box-sizing: border-box; }
 .sector-root {
   background: var(--bg); color: var(--text);
