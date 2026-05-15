@@ -92,3 +92,31 @@ export type Announcement = {
   published_at: string | null;
   url:          string | null;
 };
+
+// ─── Research Reports ─────────────────────────────────────────────────────────
+export type ReportStatus  = "draft" | "published" | "archived";
+export type ReportRating  = "BUY" | "HOLD" | "SELL" | "UNDER REVIEW";
+export type RiskSeverity  = "High" | "Medium" | "Low";
+
+export type ReportThesisPoint = { title: string; body: string; };
+export type ReportFinancialRow = { metric: string; fy23?: string; fy24?: string; fy25e?: string; [key: string]: string | undefined; };
+export type ReportValuation = { method: string; blendedTarget: string; notes: string; [key: string]: string; };
+export type ReportRisk = { label: string; severity: RiskSeverity; detail: string; };
+export type ReportContent = { thesis: ReportThesisPoint[]; financials: ReportFinancialRow[]; valuation: ReportValuation; risks: ReportRisk[]; };
+
+export type ResearchReport = {
+  id: string; slug: string; title: string; summary: string | null;
+  content: ReportContent | null; ticker_symbols: string[]; sectors: string[];
+  tags: string[]; author: string; published_at: string | null;
+  status: ReportStatus; rating: ReportRating | null;
+  target_price: number | null; current_price: number | null; upside: number | null;
+  ai_summary: string | null; featured_image: string | null; related_slugs: string[];
+  seo_title: string | null; seo_description: string | null;
+  view_count: number; created_at: string; updated_at: string;
+};
+
+export type ResearchReportSummary = Pick<ResearchReport,
+  | "id" | "slug" | "title" | "summary" | "ticker_symbols"
+  | "sectors" | "tags" | "author" | "published_at"
+  | "status" | "rating" | "target_price" | "upside"
+>;

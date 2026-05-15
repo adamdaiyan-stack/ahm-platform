@@ -1,11 +1,17 @@
 // services/api/research.ts
-// Corporate actions and announcements — dividends, filings, news.
-// Expand this as the research layer grows (reports, AI summaries, macro data).
+// All research-layer data access — dividends, announcements, research reports.
+// No business logic here; only structured DB queries.
 
 import { supabase } from "@/lib/supabase";
-import type { Dividend, Announcement } from "@/types";
+import type {
+  Dividend,
+  Announcement,
+  ResearchReport,
+  ResearchReportSummary,
+} from "@/types";
 
 // ─── Dividends ────────────────────────────────────────────────────────────────
+
 export async function getDividendsBySymbol(
   symbol: string,
   limit = 8,
@@ -21,6 +27,7 @@ export async function getDividendsBySymbol(
 }
 
 // ─── Announcements ────────────────────────────────────────────────────────────
+
 export async function getAnnouncementsBySymbol(
   symbol: string,
   limit = 5,
@@ -36,6 +43,7 @@ export async function getAnnouncementsBySymbol(
 }
 
 // ─── Convenience: all stock-page corporate data in one call ───────────────────
+
 export type StockCorporateData = {
   dividends:     Dividend[];
   announcements: Announcement[];
@@ -46,5 +54,56 @@ export async function getStockCorporateData(symbol: string): Promise<StockCorpor
     getDividendsBySymbol(symbol),
     getAnnouncementsBySymbol(symbol),
   ]);
-  return { dividends, announcements };
+    return { dividends, announcements };
+}
+
+// ─── Research Reports ─────────────────────────────────────────────────────────
+
+export async function getReportBySlug(slug: string): Promise<ResearchReport | null> {
+  const { data, error } = await supabase
+    .from("research_reports")
+    .select("*")
+    .eq("slug", slug)
+    .eq("status", "published")
+    .single();
+  if (error) {
+    if (error.code !== "PGRST116") console.error("[research] getReportBySlug:", error.message);
+    return null;
+  }
+  return data as ResearchReport;
+}
+
+export async function getPublishedReports(limit = 20): Promise<ResearchReportSummary[]> {
+  const { data, error } = await supabase
+    .from("research_reports")
+    .select("id, slug, title, summary, ticker_symbols, sectors, tags, author, published_at, status, rating, target_price, upside")
+    .eq("status", "published")
+    .order("published_at", { ascending: false })
+    .limit(limit);
+  if (error) { console.error("[research] getPublishedReports:", error.message); return []; }
+  return (data ?? []) as ResearchReportSummary[];
+}
+
+export async function getReportsByTicker(symbol: string, limit = 5): Promise<ResearchReportSummary[]> {
+  const { data, error } = await supabase
+    .from("research_reports")
+    .select("id, slug, title, summary, ticker_symbols, sectors, tags, author, published_at, status, rating, target_price, upside")
+    .eq("status", "published")
+    .contains("ticker_symbols", [symbol.toUpperCase()])
+    .order("published_at", { ascending: false })
+    .limit(limit);
+  if (error) { console.error("[research] getReportsByTicker:", error.message); return []; }
+  return (data ?? []) as ResearchReportSummary[];
+}
+
+export async function getReportsBySector(sector: string, limit = 10): Promise<ResearchReportSummary[]> {
+  const { data, error } = await supabase
+    .from("research_reports")
+    .select("id, slug, title, summary, ticker_symbols, sectors, tags, author, published_at, status, rating, target_price, upside")
+    .eq("status", "published")
+    .contains("sectors", [sector])
+    .order("published_at", { ascending: false })
+    .limit(limit);
+  if (error) { console.error("[research] getReportsBySector:", error.message); return []; }
+  return (data ?? []) as ResearchReportSummary[];
 }
