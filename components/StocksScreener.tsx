@@ -1,19 +1,13 @@
 "use client";
+
+import { SECTOR_SLUG } from "@/constants";
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import type { Company } from "@/types";
 import { formatPrice, formatChange, formatPercent, formatVolume, formatMarketCap } from "@/lib/formatters";
 
-const SECTOR_SLUG: Record<string, string> = {
-  "Banking":    "banking",
-  "Automobile": "auto",
-  "Cement":     "cement",
-  "Fertiliser": "fertiliser",
-  "Oil & Gas":  "oil-gas",
-  "Power":      "power-ipp",
-  "Textiles":   "textiles",
-};
+
 
 type SortKey = keyof Pick<Company,
   "symbol"|"company_name"|"sector"|"current_price"|"change"|"change_percent"|

@@ -3,6 +3,7 @@ import { getCompanyBySymbol, getCompanyPeers } from "@/services/api/companies";
 import { getStockCorporateData } from "@/services/api/research";
 import { formatPrice, formatChange, formatPercent, formatVolume, formatMarketCap } from "@/lib/formatters";
 import { Company, Dividend } from "@/types";
+import { SECTOR_SLUG } from "@/constants";
 
 type Announcement = { id: number; symbol: string; title: string; category: string | null; published_at: string; url: string | null };
 
@@ -11,15 +12,7 @@ function fmtDate(iso: string | null): string {
   return new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-const SECTOR_SLUG: Record<string, string> = {
-  "Banking":    "banking",
-  "Automobile": "auto",
-  "Cement":     "cement",
-  "Fertiliser": "fertiliser",
-  "Oil & Gas":  "oil-gas",
-  "Power":      "power-ipp",
-  "Textiles":   "textiles",
-};
+
 
 const WA_BASE = "https://wa.me/923001234567";
 

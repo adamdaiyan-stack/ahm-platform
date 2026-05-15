@@ -2,6 +2,7 @@
 import { notFound } from "next/navigation";
 import { sectorMap } from "@/data/sectors";
 import SectorShell from "@/components/sectors/SectorShell";
+import BankingModule from "@/components/sectors/BankingModule";
 import Link from "next/link";
 
 export default async function SectorPage({
@@ -16,6 +17,7 @@ export default async function SectorPage({
 
   return (
     <div className="sector-root">
+      {/* ← Back nav */}
       <div
         style={{
           background: "var(--bg2)",
@@ -37,7 +39,21 @@ export default async function SectorPage({
           ← All Sectors
         </Link>
       </div>
+
+      {/* Primary content — static sector intelligence */}
       <SectorShell sector={sector} />
+
+      {/* Banking-only supplement — live data, interactive comparison */}
+      {slug === "banking" && (
+        <div
+          style={{
+            borderTop: "1px solid var(--border)",
+            marginTop: "0",
+          }}
+        >
+          <BankingModule />
+        </div>
+      )}
     </div>
   );
 }
