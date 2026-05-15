@@ -28,7 +28,7 @@ export default function AHMLogo({
   const imgProps = {
     width,
     height,
-    style: { filter, display: "block" } as React.CSSProperties,
+    style: { filter } as React.CSSProperties,
     alt:   "AHM Securities",
     draggable: false as const,
   };
