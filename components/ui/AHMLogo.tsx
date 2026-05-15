@@ -1,18 +1,21 @@
 // components/ui/AHMLogo.tsx
-// Uses the real brand SVGs extracted from AHM_logo.ai.
-// Dark mode (default) → logo-dark.svg (white lettering on transparent)
-// Light mode          → logo-light.svg (dark navy lettering on transparent)
-// Theme switching is handled in globals.css via [data-theme="light"].
+// Renders the AHM Securities brand logo using real SVGs from /public/branding/.
+//
+// ahm-logo-light.svg — dark navy letterforms (for light mode / light backgrounds)
+// ahm-logo-dark.svg  — white letterforms    (for dark mode / dark backgrounds)
+//
+// Theme switching via globals.css .ahm-logo-dark / .ahm-logo-light rules.
+// All consumers must go through this component — never reference logo files directly.
 
 interface AHMLogoProps {
   height?: number;
   className?: string;
-  /** Apply grayscale + opacity filter — use for footer / monochrome contexts */
+  /** Apply grayscale + reduced opacity — for footer / monochrome contexts */
   grayscale?: boolean;
 }
 
-// Aspect ratio from the AI file viewBox: 143.843 × 75.2464
-const ASPECT = 143.843 / 75.2464; // ≈ 1.912
+// Source viewBox: 143.843 × 75.2464 pt  →  aspect ratio ≈ 1.912
+const ASPECT = 143.843 / 75.2464;
 
 export default function AHMLogo({
   height = 30,
@@ -20,7 +23,7 @@ export default function AHMLogo({
   grayscale = false,
 }: AHMLogoProps) {
   const width  = Math.round(height * ASPECT);
-  const filter = grayscale ? "grayscale(1) opacity(0.55)" : undefined;
+  const filter = grayscale ? "grayscale(1) opacity(0.45)" : undefined;
 
   const imgProps = {
     width,
@@ -32,19 +35,21 @@ export default function AHMLogo({
 
   return (
     <span
-      className={["inline-flex items-center", className].filter(Boolean).join(" ")}
-      style={{ width, height, flexShrink: 0 }}
+      className={["inline-flex items-center shrink-0", className]
+        .filter(Boolean)
+        .join(" ")}
+      style={{ width, height }}
     >
-      {/* Dark mode logo — white letterforms (shown by default) */}
+      {/* Dark mode: white letterforms on dark backgrounds (default theme) */}
       <img
         {...imgProps}
-        src="/logo-dark.svg"
+        src="/branding/ahm-logo-dark.svg"
         className="ahm-logo-dark"
       />
-      {/* Light mode logo — dark navy letterforms */}
+      {/* Light mode: dark navy letterforms on light backgrounds */}
       <img
         {...imgProps}
-        src="/logo-light.svg"
+        src="/branding/ahm-logo-light.svg"
         className="ahm-logo-light"
       />
     </span>

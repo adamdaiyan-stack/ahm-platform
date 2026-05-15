@@ -1,43 +1,22 @@
+// app/learn/page.tsx
+// Learning Center index — links to individual beginner guides.
+// All colors use design tokens so the page responds to the theme system.
+
+import Link from "next/link";
+import type { Metadata } from "next";
 import PageContainer from "@/components/layout/PageContainer";
 import SectionTitle from "@/components/ui/SectionTitle";
+import { LEARN_ARTICLES } from "@/constants/learn";
 
-const TOPICS = [
-  {
-    number: "01",
-    title: "PSX Basics",
-    desc: "How the Pakistan Stock Exchange works — market structure, trading hours, settlement, and indices.",
-  },
-  {
-    number: "02",
-    title: "Reading Financial Statements",
-    desc: "Income statement, balance sheet, and cash flow — what to look for in Pakistani company accounts.",
-  },
-  {
-    number: "03",
-    title: "Sector Analysis",
-    desc: "How to analyse individual sectors — key drivers, cost structures, regulatory environment, and cycle positioning.",
-  },
-  {
-    number: "04",
-    title: "Valuation Methods",
-    desc: "P/E, P/B, DCF, and dividend yield — how to value PSX stocks using fundamental analysis.",
-  },
-  {
-    number: "05",
-    title: "Reading the Screener",
-    desc: "How to use the AHM Stock Screener to filter, rank, and shortlist investment ideas.",
-  },
-  {
-    number: "06",
-    title: "Understanding Dividends",
-    desc: "Dividend policy, payout ratios, book closure dates, and how to evaluate dividend yield on PSX.",
-  },
-];
+export const metadata: Metadata = {
+  title: "Learning Center | AHM Securities",
+  description: "Foundational guides for understanding the Pakistan Stock Exchange and building an investment framework.",
+};
 
 export default function LearnPage() {
   return (
-    <main className="flex-1 bg-black text-white">
-      <div className="border-b border-gray-800 py-10">
+    <main className="flex-1 bg-base text-tx-primary">
+      <div className="border-b border-border-theme py-10">
         <PageContainer>
           <SectionTitle
             eyebrow="Learning Center"
@@ -49,16 +28,21 @@ export default function LearnPage() {
 
       <PageContainer className="py-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {TOPICS.map((t) => (
-            <div
-              key={t.number}
-              className="bg-gray-950 border border-gray-800 rounded-xl p-6 hover:border-gray-700 transition-colors"
+          {LEARN_ARTICLES.map((article) => (
+            <Link
+              key={article.slug}
+              href={`/learn/${article.slug}`}
+              className="group flex flex-col bg-surface border border-border-theme rounded-xl p-6 hover:border-tx-secondary transition-all"
             >
-              <p className="text-xs font-mono text-gray-700 mb-3">{t.number}</p>
-              <h2 className="text-base font-bold text-white mb-2">{t.title}</h2>
-              <p className="text-gray-500 text-xs leading-relaxed">{t.desc}</p>
-              <p className="text-xs font-mono text-gray-700 mt-4">Coming soon</p>
-            </div>
+              <p className="text-xs font-mono text-tx-disabled mb-3">{article.number}</p>
+              <h2 className="text-base font-bold text-tx-primary mb-2 group-hover:text-gain transition-colors">
+                {article.title}
+              </h2>
+              <p className="text-tx-secondary text-xs leading-relaxed flex-1">{article.desc}</p>
+              <p className="text-xs font-mono text-tx-disabled mt-4 group-hover:text-tx-secondary transition-colors">
+                Read guide →
+              </p>
+            </Link>
           ))}
         </div>
       </PageContainer>
