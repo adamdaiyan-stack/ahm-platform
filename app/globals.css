@@ -55,3 +55,13 @@ body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   transition: background-color 0.15s ease, color 0.15s ease;
 }
+
+/* ── LOGO THEME SWITCHING ───────────────────────────────────────
+   Dark mode (default): show dark logo (white lettering)
+   Light mode:          show light logo (dark navy lettering)
+──────────────────────────────────────────────────────────────── */
+.ahm-logo-dark  { display: block; }
+.ahm-logo-light { display: none;  }
+
+[data-theme="light"] .ahm-logo-dark  { display: none;  }
+[data-theme="light"] .ahm-logo-light { display: block; }

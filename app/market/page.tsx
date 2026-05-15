@@ -2,24 +2,11 @@ import Link from "next/link";
 import { getMarketPageData } from "@/services/api";
 import { formatPrice, formatPercent, formatVolume, formatMarketCap } from "@/lib/formatters";
 import SectorTable, { type SectorRow } from "@/components/market/SectorTable";
+import { getMarketStatus, fmtUpdatedAt, marketStatusClass } from "@/lib/market";
+import MoverCard, { type MoverRow } from "@/components/market/MoverCard";
+import StatCard from "@/components/ui/StatCard";
 
-function getMarketStatus(): { label: string; open: boolean; pre: boolean } {
-  const pkt = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Karachi" }));
-  const day = pkt.getDay();
-  const mins = pkt.getHours() * 60 + pkt.getMinutes();
-  if (day === 0 || day === 6) return { label: "Closed — Weekend", open: false, pre: false };
-  if (mins >= 540 && mins < 570) return { label: "Pre-Market", open: false, pre: true };
-  if (mins >= 570 && mins < 930) return { label: "Market Open", open: true, pre: false };
-  return { label: "Market Closed", open: false, pre: false };
-}
 
-function fmtUpdated(iso: string | null): string {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleString("en-PK", {
-    timeZone: "Asia/Karachi", day: "2-digit", month: "short", year: "numeric",
-    hour: "2-digit", minute: "2-digit", hour12: true,
-  }) + " PKT";
-}
 
 export default async function MarketPage() {
   const status = getMarketStatus();
@@ -47,9 +34,7 @@ export default async function MarketPage() {
           </div>
           <div className="flex flex-col items-start md:items-end gap-3">
             <span className={`text-xs font-mono px-3 py-1.5 rounded-full border uppercase tracking-widest ${
-              status.open ? "bg-emerald-500/15 text-gain border-emerald-500/30"
-              : status.pre ? "bg-amber-500/15 text-amber-500 border-amber-500/30"
-              : "bg-surface text-tx-secondary border-border-theme"
+              marketStatusClass(status)
             }`}>
               {status.open ? "● " : "○ "}{status.label}
             </span>
@@ -63,7 +48,7 @@ export default async function MarketPage() {
                 </span>
               )}
             </div>
-            <p className="text-xs text-tx-disabled font-mono">Last updated: {fmtUpdated(idx?.updated_at ?? null)}</p>
+            <p className="text-xs text-tx-disabled font-mono">Last updated: {fmtUpdatedAt(idx?.updated_at)}</p>
           </div>
         </div>
       </div>
@@ -71,49 +56,19 @@ export default async function MarketPage() {
       {/* ── STATS STRIP ───────────────────────────────────── */}
       <div className="px-8 py-5 border-b border-border-theme">
         <div className="max-w-6xl grid grid-cols-2 md:grid-cols-4 gap-3">
-          <IndexStat label="Total Volume" value={idx?.volume   != null ? formatVolume(idx.volume)   : "—"} />
-          <IndexStat label="Advances"     value={idx?.advances != null ? String(idx.advances)       : "—"} positive />
-          <IndexStat label="Declines"     value={idx?.declines != null ? String(idx.declines)       : "—"} negative />
-          <IndexStat label="Unchanged"    value={idx?.unchanged!= null ? String(idx.unchanged)      : "—"} />
+          <StatCard size="lg" label="Total Volume" value={idx?.volume   != null ? formatVolume(idx.volume)   : "—"} />
+          <StatCard size="lg" label="Advances"     value={idx?.advances != null ? String(idx.advances)       : "—"} positive />
+          <StatCard size="lg" label="Declines"     value={idx?.declines != null ? String(idx.declines)       : "—"} negative />
+          <StatCard size="lg" label="Unchanged"    value={idx?.unchanged!= null ? String(idx.unchanged)      : "—"} />
         </div>
       </div>
 
       {/* ── THREE MOVERS ──────────────────────────────────── */}
       <div className="px-8 py-8 border-b border-border-theme">
         <div className="max-w-6xl grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div>
-            <p className="text-xs font-mono text-tx-disabled uppercase tracking-widest mb-3">Top Gainers</p>
-            <div className="bg-surface border border-border-theme rounded-xl overflow-hidden">
-              {gainers && gainers.length > 0 ? <MoverList rows={gainers} positive /> : <EmptyMover label="No price data yet" />}
-            </div>
-          </div>
-          <div>
-            <p className="text-xs font-mono text-tx-disabled uppercase tracking-widest mb-3">Top Losers</p>
-            <div className="bg-surface border border-border-theme rounded-xl overflow-hidden">
-              {losers && losers.length > 0 ? <MoverList rows={losers} positive={false} /> : <EmptyMover label="No price data yet" />}
-            </div>
-          </div>
-          <div>
-            <p className="text-xs font-mono text-tx-disabled uppercase tracking-widest mb-3">Most Active</p>
-            <div className="bg-surface border border-border-theme rounded-xl overflow-hidden">
-              {active && active.length > 0 ? (
-                <div className="divide-y divide-border-theme">
-                  {active.map((row) => (
-                    <div key={row.id} className="flex items-center justify-between px-4 py-3 hover:bg-raised transition-colors">
-                      <div>
-                        <Link href={"/stocks/" + row.symbol} className="font-mono font-bold text-tx-primary hover:text-gain transition-colors text-sm">{row.symbol}</Link>
-                        <p className="text-xs text-tx-disabled truncate max-w-28">{row.company_name}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-mono text-sm text-tx-primary tabular-nums">{formatPrice(row.current_price)}</p>
-                        <p className="text-xs text-tx-secondary font-mono tabular-nums">{formatVolume(row.volume)}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : <EmptyMover label="No volume data yet" />}
-            </div>
-          </div>
+          <MoverCard title="Top Gainers" rows={(gainers ?? []) as MoverRow[]} metric="change" positive    emptyMessage="No price data yet" />
+          <MoverCard title="Top Losers"  rows={(losers  ?? []) as MoverRow[]} metric="change" positive={false} emptyMessage="No price data yet" />
+          <MoverCard title="Most Active" rows={(active  ?? []) as MoverRow[]} metric="volume" emptyMessage="No volume data yet" />
         </div>
       </div>
 
@@ -130,38 +85,4 @@ export default async function MarketPage() {
       </div>
     </main>
   );
-}
-
-function IndexStat({ label, value, positive, negative }: { label: string; value: string; positive?: boolean; negative?: boolean }) {
-  const color = positive ? "text-gain" : negative ? "text-loss" : "text-tx-primary";
-  return (
-    <div className="bg-surface border border-border-theme rounded-xl px-4 py-3">
-      <p className="text-xs font-mono text-tx-disabled uppercase tracking-widest mb-1">{label}</p>
-      <p className={"text-xl font-bold tabular-nums " + color}>{value}</p>
-    </div>
-  );
-}
-
-type MoverRow = { id: number; symbol: string; company_name: string; sector: string; current_price: number | null; change_percent: number | null; market_cap?: number | null };
-function MoverList({ rows, positive }: { rows: MoverRow[]; positive: boolean }) {
-  return (
-    <div className="divide-y divide-border-theme">
-      {rows.map((row) => (
-        <div key={row.id} className="flex items-center justify-between px-4 py-3 hover:bg-raised transition-colors">
-          <div>
-            <Link href={"/stocks/" + row.symbol} className="font-mono font-bold text-tx-primary hover:text-gain transition-colors text-sm">{row.symbol}</Link>
-            <p className="text-xs text-tx-disabled truncate max-w-28">{row.company_name}</p>
-          </div>
-          <div className="text-right">
-            <p className="font-mono text-sm text-tx-primary tabular-nums">{formatPrice(row.current_price)}</p>
-            <p className={"text-xs font-semibold font-mono tabular-nums " + (positive ? "text-gain" : "text-loss")}>{formatPercent(row.change_percent)}</p>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function EmptyMover({ label }: { label: string }) {
-  return <div className="px-5 py-10 text-center"><p className="text-tx-disabled text-xs font-mono">{label}</p></div>;
 }

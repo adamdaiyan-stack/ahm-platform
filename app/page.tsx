@@ -2,16 +2,10 @@ import Link from "next/link";
 import { getKSE100Index, getTopGainers, getTopLosers } from "@/services/api/market";
 import { formatPercent, formatVolume, formatPrice } from "@/lib/formatters";
 import AHMLogo from "@/components/ui/AHMLogo";
+import { getMarketStatus, marketStatusClass } from "@/lib/market";
+import StatCard from "@/components/ui/StatCard";
 
-function getMarketStatus() {
-  const pkt = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Karachi" }));
-  const day = pkt.getDay();
-  const mins = pkt.getHours() * 60 + pkt.getMinutes();
-  if (day === 0 || day === 6) return { label: "Closed — Weekend", open: false, pre: false };
-  if (mins >= 570 && mins < 585) return { label: "Pre-Market", open: false, pre: true };
-  if (mins >= 585 && mins < 930) return { label: "Market Open", open: true, pre: false };
-  return { label: "Market Closed", open: false, pre: false };
-}
+
 
 const MODULES = [
   { href: "/market",   accent: "violet",  title: "Market Dashboard",    desc: "KSE-100 index, top gainers, losers, most active, and sector heatmap." },
@@ -66,9 +60,7 @@ export default async function Home() {
               Pakistan Stock Exchange · KSE-100
             </p>
             <span className={`text-xs font-mono px-2.5 py-1 rounded-full border uppercase tracking-widest ${
-              status.open ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/30"
-              : status.pre ? "bg-amber-500/10 text-amber-500 border-amber-500/30"
-              : "bg-surface text-tx-disabled border-border-theme"
+              marketStatusClass(status)
             }`}>
               {status.open ? "● " : "○ "}{status.label}
             </span>
@@ -88,10 +80,10 @@ export default async function Home() {
               )}
             </div>
             <div className="flex flex-wrap gap-3 md:ml-10 md:mb-1">
-              <StatPill label="Volume"    value={idx?.volume    != null ? formatVolume(idx.volume)  : "—"} />
-              <StatPill label="Advances"  value={idx?.advances  != null ? String(idx.advances)      : "—"} positive />
-              <StatPill label="Declines"  value={idx?.declines  != null ? String(idx.declines)      : "—"} negative />
-              <StatPill label="Unchanged" value={idx?.unchanged != null ? String(idx.unchanged)     : "—"} />
+              <StatCard label="Volume"    value={idx?.volume    != null ? formatVolume(idx.volume)  : "—"} />
+              <StatCard label="Advances"  value={idx?.advances  != null ? String(idx.advances)      : "—"} positive />
+              <StatCard label="Declines"  value={idx?.declines  != null ? String(idx.declines)      : "—"} negative />
+              <StatCard label="Unchanged" value={idx?.unchanged != null ? String(idx.unchanged)     : "—"} />
             </div>
           </div>
 
@@ -250,17 +242,5 @@ export default async function Home() {
       </div>
 
     </main>
-  );
-}
-
-function StatPill({ label, value, positive, negative }: {
-  label: string; value: string; positive?: boolean; negative?: boolean;
-}) {
-  const color = positive ? "text-gain" : negative ? "text-loss" : "text-tx-secondary";
-  return (
-    <div className="bg-surface border border-border-theme rounded-lg px-4 py-2 min-w-24">
-      <p className="text-xs font-mono text-tx-disabled uppercase tracking-widest mb-0.5">{label}</p>
-      <p className={"text-sm font-bold tabular-nums font-mono " + color}>{value}</p>
-    </div>
   );
 }

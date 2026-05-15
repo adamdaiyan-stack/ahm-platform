@@ -4,7 +4,7 @@ import Link from "next/link";
 import { getCompaniesBySymbols } from "@/services/api/companies";
 import { formatPrice, formatPercent, formatMarketCap } from "@/lib/formatters";
 import { BANK_PROFILES, BANK_SYMBOLS } from "@/constants";
-import { Card } from "@/components/ui";
+import { Card, BarChart } from "@/components/ui";
 
 type Mode = "summary" | "research";
 type EcoSub = "metrics" | "variables" | "risks";
@@ -24,17 +24,6 @@ function RiskBadge({ label, level }: { label: string; level: "high" | "medium" |
     ok: "text-gain bg-gain/10", watch: "text-yellow-400 bg-yellow-400/10", risk: "text-loss bg-loss/10",
   }[level];
   return <span className={"text-[10px] font-mono uppercase px-2 py-0.5 rounded-full " + s}>{label}</span>;
-}
-function Bar({ label, value, highlight }: { label: string; value: number; highlight: boolean }) {
-  return (
-    <div className="flex items-center gap-3 py-1.5">
-      <span className="text-xs font-mono text-tx-secondary w-12 flex-shrink-0">{label}</span>
-      <div className="flex-1 bg-raised rounded-full h-2">
-        <div className={"h-2 rounded-full transition-all " + (highlight ? "bg-gain" : "bg-tx-disabled/40")} style={{ width: value + "%" }} />
-      </div>
-      <span className="text-xs font-mono font-semibold text-tx-primary w-8 text-right">{value}%</span>
-    </div>
-  );
 }
 
 // ── Overview ───────────────────────────────────────────────────────────────
@@ -383,7 +372,15 @@ function CompaniesTab({ mode }: { mode: Mode }) {
       {/* CASA bar */}
       <div className="max-w-xs">
         <SL>CASA ratio by bank</SL>
-        {BANK_PROFILES.map(({ sym, casa }) => <Bar key={sym} label={sym} value={casa} highlight={selected.includes(sym)} />)}
+        <BarChart
+          items={BANK_PROFILES.map(({ sym, casa }) => ({
+            label:     sym,
+            value:     casa,
+            highlight: selected.includes(sym),
+          }))}
+          unit="%"
+          showValues
+        />
       </div>
 
       {/* Bank profiles */}

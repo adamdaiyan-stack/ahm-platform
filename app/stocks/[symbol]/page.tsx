@@ -4,6 +4,7 @@ import { getStockCorporateData } from "@/services/api/research";
 import { formatPrice, formatChange, formatPercent, formatVolume, formatMarketCap } from "@/lib/formatters";
 import { Company, Dividend } from "@/types";
 import { SECTOR_SLUG } from "@/constants";
+import StatCard from "@/components/ui/StatCard";
 
 type Announcement = { id: number; symbol: string; title: string; category: string | null; published_at: string; url: string | null };
 
@@ -349,14 +350,7 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return <p className="text-xs font-mono text-tx-disabled uppercase tracking-widest mb-3">{children}</p>;
 }
-function StatCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="bg-surface border border-border-theme rounded-xl p-4">
-      <p className="text-xs text-tx-disabled uppercase tracking-widest mb-1.5 font-mono">{label}</p>
-      <p className="text-tx-primary text-base font-semibold tabular-nums">{value}</p>
-    </div>
-  );
-}
+
 function MetaItem({ label, value }: { label: string; value: string }) {
   return (
     <div>

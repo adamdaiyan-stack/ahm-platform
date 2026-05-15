@@ -6,3 +6,4 @@ export { default as SectionTitle } from "./SectionTitle";
 export { default as StatCard }     from "./StatCard";
 export { default as Table }        from "./Table";
 export type { ColumnDef }          from "./Table";
+export { BarChart }            from "./charts";
