@@ -1,3 +1,4 @@
+"use client";
 // components/market/SectorTable.tsx
 import Link from "next/link";
 import Table, { type ColumnDef } from "@/components/ui/Table";
