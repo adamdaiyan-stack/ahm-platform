@@ -4,17 +4,26 @@
 //
 // ROUTING STRATEGY
 // ─────────────────
-// Banking → BankingFrameworkPage (new 3-level framework — pilot/gold standard)
-// All others → SectorShell (existing HTML-tab renderer — pending progressive migration)
+// Each migrated sector gets its own FrameworkPage branch below.
+// All unmigrated sectors fall through to SectorShell (legacy HTML-tab renderer).
 //
-// As each sector is migrated to the new framework, add a branch here.
-// The migration order per roadmap: Banking (done) → Cement → Oil & Gas → others.
+// MIGRATION ORDER (per roadmap & docs/sectors/sector-framework-template.md)
+//   Banking   done  → BankingFrameworkPage
+//   Cement    done  → CementFrameworkPage
+//   Oil & Gas       → pending
+//   Fertiliser      → pending
+//   Power           → pending
+//   Automobile      → pending
+//   Textiles        → pending
+//
+// To add a new sector: import its FrameworkPage and add an `if` branch below.
 
-import { notFound }             from "next/navigation";
-import { sectorMap }            from "@/data/sectors";
-import SectorShell              from "@/components/sectors/SectorShell";
-import BankingFrameworkPage     from "@/components/sectors/banking/BankingFrameworkPage";
-import Link                     from "next/link";
+import { notFound }          from "next/navigation";
+import { sectorMap }         from "@/data/sectors";
+import SectorShell           from "@/components/sectors/SectorShell";
+import BankingFrameworkPage  from "@/components/sectors/banking/BankingFrameworkPage";
+import CementFrameworkPage   from "@/components/sectors/cement/CementFrameworkPage";
+import Link                  from "next/link";
 
 export default async function SectorPage({
   params,
@@ -26,38 +35,35 @@ export default async function SectorPage({
 
   if (!sector) notFound();
 
-  // ── Banking: new framework (pilot) ──────────────────────────────────────
-  if (slug === "banking") {
-    return <BankingFrameworkPage />;
-  }
+  // ── Framework routes — migrated sectors ─────────────────────────────────
+  if (slug === "banking") return <BankingFrameworkPage />;
+  if (slug === "cement")  return <CementFrameworkPage />;
 
-  // ── All other sectors: existing SectorShell (to be migrated progressively) ──
-  // The back-nav and SectorShell remain unchanged — no intelligence is removed.
+  // ── Legacy SectorShell — all other sectors (pending migration) ───────────
+  // Back-nav and full tab intelligence preserved unchanged.
   return (
     <div className="sector-root">
       <div
         style={{
-          background: "var(--bg2)",
+          background:   "var(--bg2)",
           borderBottom: "1px solid var(--border)",
-          padding: "10px 60px",
+          padding:      "10px 60px",
         }}
       >
         <Link
           href="/sectors"
           style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: "10px",
+            fontFamily:    "'JetBrains Mono', monospace",
+            fontSize:      "10px",
             letterSpacing: "0.15em",
             textTransform: "uppercase",
-            color: "var(--text3)",
+            color:         "var(--text3)",
             textDecoration: "none",
           }}
         >
           ← All Sectors
         </Link>
       </div>
-
-      {/* Full sector intelligence — all tabs preserved */}
       <SectorShell sector={sector} />
     </div>
   );
