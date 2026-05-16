@@ -65,3 +65,11 @@ body {
 
 [data-theme="light"] .ahm-logo-dark  { display: none;  }
 [data-theme="light"] .ahm-logo-light { display: block; }
+
+/* ── UTILITIES ───────────────────────────────────────────────── */
+/* Hide scrollbar while keeping scroll functionality */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Scroll anchor offset — accounts for sticky nav bars */
+.scroll-anchor { scroll-margin-top: 80px; }
