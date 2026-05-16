@@ -1,46 +1,61 @@
 // components/sectors/framework/SectorIntelligenceSummary.tsx
-// Level-1 intelligence summary block — institutional-style concise editorial.
-// Designed as an AI-ready slot: currently static text, future = API-generated summary.
+//
+// LEVEL 1 — INTELLIGENCE SUMMARY
+// Institutional-style editorial overview of the sector's current state.
+// Designed as an AI-ready slot — currently static editorial text.
+// Future: dynamically populated by the AHM Intelligence Engine.
+//
 // Server-safe.
+
+import SectionLabel from "./SectionLabel";
 
 interface Props {
   summary:     string;
   accentColor: string;
-  label?:      string;  // defaults to "Intelligence Summary"
+  label?:      string;
 }
 
 export default function SectorIntelligenceSummary({
   summary,
   accentColor,
-  label = "Intelligence Summary",
+  label = "Sector Intelligence",
 }: Props) {
   return (
-    <section
-      className="rounded-xl border p-6"
-      style={{ borderColor: accentColor + "40", background: accentColor + "08" }}
-    >
-      {/* Label strip */}
-      <div className="flex items-center gap-2 mb-3">
-        <div className="h-3 w-0.5 rounded-full" style={{ background: accentColor }} />
-        <p
-          className="text-[10px] font-mono uppercase tracking-widest"
-          style={{ color: accentColor }}
-        >
-          {label}
+    <div>
+      <SectionLabel label={label} />
+
+      {/* Intelligence card — accent border signals institutional content */}
+      <div
+        className="rounded-xl border p-6"
+        style={{
+          borderColor: accentColor + "40",
+          background:  accentColor + "08",
+        }}
+      >
+        {/* Accent rule + label */}
+        <div className="flex items-center gap-2.5 mb-4">
+          <div
+            className="h-3.5 w-0.5 rounded-full shrink-0"
+            style={{ background: accentColor }}
+          />
+          <p
+            className="text-[10px] font-mono uppercase tracking-widest"
+            style={{ color: accentColor }}
+          >
+            AHM Intelligence
+          </p>
+        </div>
+
+        {/* Summary text — larger weight for readability */}
+        <p className="text-[13px] text-tx-primary leading-relaxed font-medium">
+          {summary}
         </p>
-        <span className="text-[10px] font-mono text-tx-disabled border border-border-theme rounded px-1.5 py-0.5 ml-auto">
-          AI-Ready
-        </span>
+
+        {/* Disclaimer */}
+        <p className="text-[10px] font-mono text-tx-disabled mt-4 pt-3 border-t border-border-theme">
+          Editorial summary · For informational purposes only · Not investment advice
+        </p>
       </div>
-
-      {/* Summary text */}
-      <p className="text-sm text-tx-primary leading-relaxed font-medium">{summary}</p>
-
-      {/* Future AI slot indicator */}
-      <p className="text-[10px] font-mono text-tx-disabled mt-3 pt-3 border-t border-border-theme">
-        This section will be dynamically populated by the AHM Intelligence Engine.
-        Currently displays editorial summary.
-      </p>
-    </section>
+    </div>
   );
 }

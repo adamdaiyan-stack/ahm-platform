@@ -1,8 +1,12 @@
 // components/sectors/framework/SectorSnapshot.tsx
-// Level-1 live snapshot: top stocks in the sector with price + daily move.
-// Receives pre-fetched company data from the parent server component — no client fetch needed.
+//
+// LEVEL 1 — LIVE SECTOR SNAPSHOT
+// Top stocks in the sector with current price + daily move.
+// Receives pre-fetched company data from the parent server component.
+// Server-safe — no client fetch required.
 
-import Link from "next/link";
+import Link          from "next/link";
+import SectionLabel  from "./SectionLabel";
 
 export type SnapshotCompany = {
   symbol:         string;
@@ -20,42 +24,43 @@ export default function SectorSnapshot({ companies, accentColor }: Props) {
   if (!companies.length) return null;
 
   return (
-    <section>
-      <p className="text-xs font-mono text-tx-disabled uppercase tracking-widest mb-4">
-        Sector Snapshot · Top Stocks
-      </p>
+    <div>
+      <SectionLabel label="Live Prices" badge="Real-time" />
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
         {companies.map((co) => {
-          const chg    = co.change_percent;
-          const isPos  = chg != null && chg > 0;
-          const isNeg  = chg != null && chg < 0;
-          const color  = chg == null
+          const chg   = co.change_percent;
+          const isPos = chg != null && chg > 0;
+          const isNeg = chg != null && chg < 0;
+
+          const changeColor = chg == null
             ? "text-tx-disabled"
             : isPos ? "text-gain" : isNeg ? "text-loss" : "text-tx-secondary";
-          const bgAccent = chg == null ? ""
-            : isPos ? "border-gain/20" : isNeg ? "border-loss/20" : "";
+
+          const borderClass = chg == null
+            ? "border-border-theme"
+            : isPos ? "border-gain/20" : isNeg ? "border-loss/20" : "border-border-theme";
 
           return (
             <Link
               key={co.symbol}
               href={`/stocks/${co.symbol}`}
-              className={`group bg-surface border rounded-xl px-4 py-4 hover:border-tx-secondary transition-all ${bgAccent || "border-border-theme"}`}
+              className={`group bg-surface border rounded-xl px-4 py-4 hover:border-tx-secondary transition-all ${borderClass}`}
             >
               <p
-                className="text-xs font-mono font-bold mb-0.5"
+                className="text-[11px] font-mono font-bold mb-0.5 tracking-wide"
                 style={{ color: accentColor }}
               >
                 {co.symbol}
               </p>
-              <p className="text-[11px] text-tx-disabled truncate mb-2 leading-snug">
+              <p className="text-[11px] text-tx-disabled truncate mb-3 leading-snug">
                 {co.company_name}
               </p>
-              <p className="text-base font-bold text-tx-primary tabular-nums">
+              <p className="text-sm font-bold text-tx-primary tabular-nums">
                 {co.current_price != null
                   ? `Rs${co.current_price.toFixed(2)}`
                   : "—"}
               </p>
-              <p className={`text-xs font-mono tabular-nums mt-0.5 ${color}`}>
+              <p className={`text-[11px] font-mono tabular-nums mt-0.5 ${changeColor}`}>
                 {chg == null
                   ? "—"
                   : `${isPos ? "+" : ""}${chg.toFixed(2)}%`}
@@ -64,6 +69,6 @@ export default function SectorSnapshot({ companies, accentColor }: Props) {
           );
         })}
       </div>
-    </section>
+    </div>
   );
 }
