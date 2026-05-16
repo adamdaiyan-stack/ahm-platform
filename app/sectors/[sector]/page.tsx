@@ -1,9 +1,20 @@
 // app/sectors/[sector]/page.tsx
-import { notFound } from "next/navigation";
-import { sectorMap } from "@/data/sectors";
-import SectorShell from "@/components/sectors/SectorShell";
-import BankingModule from "@/components/sectors/BankingModule";
-import Link from "next/link";
+//
+// Dynamic sector route.
+//
+// ROUTING STRATEGY
+// ─────────────────
+// Banking → BankingFrameworkPage (new 3-level framework — pilot/gold standard)
+// All others → SectorShell (existing HTML-tab renderer — pending progressive migration)
+//
+// As each sector is migrated to the new framework, add a branch here.
+// The migration order per roadmap: Banking (done) → Cement → Oil & Gas → others.
+
+import { notFound }             from "next/navigation";
+import { sectorMap }            from "@/data/sectors";
+import SectorShell              from "@/components/sectors/SectorShell";
+import BankingFrameworkPage     from "@/components/sectors/banking/BankingFrameworkPage";
+import Link                     from "next/link";
 
 export default async function SectorPage({
   params,
@@ -15,9 +26,15 @@ export default async function SectorPage({
 
   if (!sector) notFound();
 
+  // ── Banking: new framework (pilot) ──────────────────────────────────────
+  if (slug === "banking") {
+    return <BankingFrameworkPage />;
+  }
+
+  // ── All other sectors: existing SectorShell (to be migrated progressively) ──
+  // The back-nav and SectorShell remain unchanged — no intelligence is removed.
   return (
     <div className="sector-root">
-      {/* ← Back nav */}
       <div
         style={{
           background: "var(--bg2)",
@@ -40,20 +57,8 @@ export default async function SectorPage({
         </Link>
       </div>
 
-      {/* Primary content — static sector intelligence */}
+      {/* Full sector intelligence — all tabs preserved */}
       <SectorShell sector={sector} />
-
-      {/* Banking-only supplement — live data, interactive comparison */}
-      {slug === "banking" && (
-        <div
-          style={{
-            borderTop: "1px solid var(--border)",
-            marginTop: "0",
-          }}
-        >
-          <BankingModule />
-        </div>
-      )}
     </div>
   );
 }
