@@ -18,7 +18,7 @@
 // collapsed so users can scan the page and understand every section at a glance
 // without having to open it.
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 interface Props {
   id:           string;
@@ -38,16 +38,30 @@ export default function ExpandableSection({
   children,
 }: Props) {
   const [open, setOpen] = useState(defaultOpen);
+  const sectionRef = useRef<HTMLDivElement>(null);
+
+  function handleToggle() {
+    const willOpen = !open;
+    setOpen(willOpen);
+    if (willOpen) {
+      // After React re-renders and the section expands, scroll so the header
+      // stays visible rather than disappearing behind the sticky nav bar.
+      requestAnimationFrame(() => {
+        sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      });
+    }
+  }
 
   return (
     <div
       id={id}
+      ref={sectionRef}
       className="scroll-anchor border border-border-theme rounded-xl overflow-hidden"
     >
       {/* ── Toggle header ─────────────────────────────────────────── */}
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={handleToggle}
         className="w-full flex items-start justify-between gap-4 px-6 pt-4 pb-3 bg-surface hover:bg-raised transition-colors text-left"
         aria-expanded={open}
       >
@@ -79,7 +93,7 @@ export default function ExpandableSection({
       {takeaway && (
         <div
           className="px-6 pb-4 bg-surface border-t border-border-theme/50"
-          onClick={() => setOpen((o) => !o)}
+          onClick={handleToggle}
           style={{ cursor: "pointer" }}
         >
           <p className="text-[11px] text-tx-secondary leading-relaxed">
@@ -97,20 +111,4 @@ export default function ExpandableSection({
       {/* ── Full content — shown only when expanded ────────────────── */}
       {open && (
         <div className="border-t border-border-theme">
-          {children}
-
-          {/* Collapse footer */}
-          <div className="border-t border-border-theme px-6 py-3 bg-surface">
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="text-[10px] font-mono text-tx-disabled hover:text-tx-secondary transition-colors"
-            >
-              ↑ Collapse section
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+          {

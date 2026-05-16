@@ -59,7 +59,7 @@ export default function SectorPageFrame({
       <SectorHero config={config} />
 
       {/* ── Nav + Content — responsive two-column layout ─────────── */}
-      <div className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-start">
+      <div className="max-w-7xl mx-auto flex flex-col lg:flex-row">
 
         {/* SectorSideNav renders mobile tab strip + desktop sidebar */}
         {navItems.length > 0 && (
