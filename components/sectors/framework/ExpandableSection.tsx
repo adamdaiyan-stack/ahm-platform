@@ -4,15 +4,9 @@
 // Accordion section for Level-2 advanced analytics.
 //
 // STRUCTURE:
-//   ┌─ Header (always visible, click to toggle) ──────────────────┐
-//   │  [badge]  Label                                    [▾ / ▴]  │
-//   │  ─────────────────────────────────────────────────────────  │
-//   │  Key Takeaway: "..." (always visible — the section headline) │
-//   └─────────────────────────────────────────────────────────────┘
-//   ┌─ Body (shown only when expanded) ───────────────────────────┐
-//   │  [full content passed as children]                           │
-//   │  [Collapse ↑] footer                                         │
-//   └─────────────────────────────────────────────────────────────┘
+//   Header (always visible, click to toggle)
+//   Key Takeaway (always visible even when collapsed)
+//   Body (shown only when expanded — children + collapse footer)
 //
 // The takeaway is the key insight from the section — always visible even when
 // collapsed so users can scan the page and understand every section at a glance
@@ -24,7 +18,7 @@ interface Props {
   id:           string;
   label:        string;
   badge?:       string;
-  takeaway?:    string;   // Always-visible key insight (shown even when collapsed)
+  takeaway?:    string;
   defaultOpen?: boolean;
   children:     React.ReactNode;
 }
@@ -58,7 +52,7 @@ export default function ExpandableSection({
       ref={sectionRef}
       className="scroll-anchor border border-border-theme rounded-xl overflow-hidden"
     >
-      {/* ── Toggle header ─────────────────────────────────────────── */}
+      {/* Toggle header */}
       <button
         type="button"
         onClick={handleToggle}
@@ -66,7 +60,6 @@ export default function ExpandableSection({
         aria-expanded={open}
       >
         <div className="flex-1 min-w-0">
-          {/* Label row */}
           <div className="flex items-center gap-2.5 flex-wrap mb-0.5">
             {badge && (
               <span className="text-[9px] font-mono uppercase tracking-widest text-tx-disabled border border-border-theme bg-raised px-1.5 py-0.5 rounded">
@@ -78,8 +71,6 @@ export default function ExpandableSection({
             </span>
           </div>
         </div>
-
-        {/* Chevron */}
         <span
           className="text-tx-disabled text-sm shrink-0 mt-0.5 transition-transform duration-200"
           style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
@@ -89,7 +80,7 @@ export default function ExpandableSection({
         </span>
       </button>
 
-      {/* ── Takeaway — always visible ──────────────────────────────── */}
+      {/* Takeaway — always visible */}
       {takeaway && (
         <div
           className="px-6 pb-4 bg-surface border-t border-border-theme/50"
@@ -108,7 +99,21 @@ export default function ExpandableSection({
         </div>
       )}
 
-      {/* ── Full content — shown only when expanded ────────────────── */}
+      {/* Full content — shown only when expanded */}
       {open && (
         <div className="border-t border-border-theme">
-          {
+          {children}
+          <div className="border-t border-border-theme px-6 py-3 bg-surface">
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="text-[10px] font-mono text-tx-disabled hover:text-tx-secondary transition-colors"
+            >
+              ↑ Collapse section
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
