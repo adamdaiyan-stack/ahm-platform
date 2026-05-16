@@ -6,7 +6,7 @@
 //   Banking   done  → BankingFrameworkPage
 //   Cement    done  → CementFrameworkPage
 //   Textiles  done  → TextileFrameworkPage
-//   Oil & Gas       → pending
+//   Oil & Gas done  → OilGasFrameworkPage
 //   Fertiliser      → pending
 //   Power           → pending
 //   Automobile      → pending
@@ -19,6 +19,7 @@ import SectorShell            from "@/components/sectors/SectorShell";
 import BankingFrameworkPage   from "@/components/sectors/banking/BankingFrameworkPage";
 import CementFrameworkPage    from "@/components/sectors/cement/CementFrameworkPage";
 import TextileFrameworkPage   from "@/components/sectors/textile/TextileFrameworkPage";
+import OilGasFrameworkPage    from "@/components/sectors/oil-gas/OilGasFrameworkPage";
 import Link                   from "next/link";
 
 export default async function SectorPage({
@@ -35,6 +36,7 @@ export default async function SectorPage({
   if (slug === "banking")  return <BankingFrameworkPage />;
   if (slug === "cement")   return <CementFrameworkPage />;
   if (slug === "textiles") return <TextileFrameworkPage />;
+  if (slug === "oil-gas")  return <OilGasFrameworkPage />;
 
   // ── Legacy SectorShell — all other sectors (pending migration) ───────────
   return (
