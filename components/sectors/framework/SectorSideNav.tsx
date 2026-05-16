@@ -3,7 +3,7 @@
 //
 // Responsive section navigation for the Banking / sector pages.
 //
-// DESKTOP (≥1024px): sticky left sidebar, 192px wide, vertical list.
+// DESKTOP (>=1024px): sticky left sidebar, 192px wide, vertical list.
 //   Groups: L1 overview items | L2 analytics (indented) | L3 research
 //   Active item highlighted with a coloured left-bar indicator.
 //   IntersectionObserver drives the active state as user scrolls.
@@ -25,7 +25,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 
 export type NavItem = {
   id:    string;   // must match the `id` on the section DOM element
-  label: string;   // short display label (≤12 chars ideal)
+  label: string;   // short display label (<=12 chars ideal)
   group: "l1" | "l2" | "l3";  // visual grouping
 };
 
@@ -66,8 +66,8 @@ export default function SectorSideNav({ items, accentColor }: Props) {
     };
 
     const observer = new IntersectionObserver(handleIntersect, {
-      // Top 10% of viewport triggers entry; bottom 50% of viewport is dead zone.
-      // This gives a wide "active" band without jumping too aggressively.
+      // Top of viewport triggers entry; bottom 50% is dead zone.
+      // Wide "active" band without jumping too aggressively.
       rootMargin: "0px 0px -50% 0px",
       threshold: 0,
     });
@@ -92,7 +92,7 @@ export default function SectorSideNav({ items, accentColor }: Props) {
 
   return (
     <>
-      {/* ── MOBILE: sticky horizontal tab strip ──────────────────── */}
+      {/* MOBILE: sticky horizontal tab strip */}
       <div className="lg:hidden sticky top-0 z-40 bg-base/[0.97] backdrop-blur-sm border-b border-border-theme">
         <div className="flex gap-1.5 overflow-x-auto no-scrollbar px-4 py-2.5">
           {items.map((item) => {
@@ -117,16 +117,14 @@ export default function SectorSideNav({ items, accentColor }: Props) {
         </div>
       </div>
 
-      {/* ── DESKTOP: sticky left sidebar ─────────────────────────── */}
-      {/*
-        sticky + self-start on <aside> itself — NOT on an inner div.
-        self-start: gives <aside> its natural content height so it can stick
-        within the full-page scroll container rather than being stretched to the
-        flex row height (which would make it stop sticking at content bottom).
-        top-20: clears the 80px app header.
-        max-h + overflow-y-auto: sidebar scrolls independently if it's taller
-        than the viewport (e.g., many nav items on a short screen).
-      */}
+      {/* DESKTOP: sticky left sidebar
+          sticky + self-start on <aside> itself — NOT on an inner div.
+          self-start: gives <aside> its natural content height so it sticks
+          within the full-page scroll container rather than being stretched to
+          the flex row height (which stops sticky as soon as aside hits its
+          own bottom edge).
+          max-h + overflow-y-auto: sidebar scrolls independently if there are
+          many nav items on a short screen. */}
       <aside className="hidden lg:block w-48 shrink-0 sticky top-20 self-start max-h-[calc(100vh-5rem)] overflow-y-auto no-scrollbar">
         <div className="space-y-0.5 pr-6 border-r border-border-theme pb-10">
 
@@ -166,4 +164,64 @@ export default function SectorSideNav({ items, accentColor }: Props) {
           {/* L3 — Research */}
           {l3.length > 0 && (
             <>
-              <div cl
+              <div className="py-3 px-2">
+                <div className="h-px bg-border-theme" />
+              </div>
+              {l3.map((item) => (
+                <NavButton
+                  key={item.id}
+                  item={item}
+                  isActive={activeId === item.id}
+                  accentColor={accentColor}
+                  onClick={() => scrollTo(item.id)}
+                />
+              ))}
+            </>
+          )}
+
+        </div>
+      </aside>
+    </>
+  );
+}
+
+// Reusable nav button
+
+function NavButton({
+  item,
+  isActive,
+  accentColor,
+  onClick,
+  indent = false,
+}: {
+  item:        NavItem;
+  isActive:    boolean;
+  accentColor: string;
+  onClick:     () => void;
+  indent?:     boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={item.label}
+      className={[
+        "w-full text-left flex items-center gap-2 py-1.5 rounded transition-colors duration-150",
+        indent ? "pl-4 pr-2" : "px-2",
+        isActive
+          ? "text-tx-primary"
+          : "text-tx-disabled hover:text-tx-secondary",
+      ].join(" ")}
+    >
+      {/* Active indicator bar */}
+      <span
+        className="w-0.5 h-3.5 rounded-full shrink-0 transition-opacity duration-150"
+        style={{
+          background: isActive ? accentColor : "transparent",
+          opacity:    isActive ? 1 : 0,
+        }}
+        aria-hidden
+      />
+      <span className="text-[11px] font-mono truncate">{item.label}</span>
+    </button>
+  );
+}
