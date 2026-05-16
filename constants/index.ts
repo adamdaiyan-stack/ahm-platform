@@ -3,3 +3,4 @@ export * from "./sectors";
 export * from "./banking";
 export * from "./learn";
 export * from "./cement";
+export * from "./textile";
