@@ -8,7 +8,7 @@
 //   Textiles   done  → TextileFrameworkPage
 //   Oil & Gas  done  → OilGasFrameworkPage
 //   Fertiliser done  → FertiliserFrameworkPage
-//   Power           → pending
+//   Power      done  → PowerFrameworkPage
 //   Automobile      → pending
 //
 // To add a new sector: import its FrameworkPage and add an `if` branch below.
@@ -21,6 +21,7 @@ import CementFrameworkPage       from "@/components/sectors/cement/CementFramewo
 import TextileFrameworkPage      from "@/components/sectors/textile/TextileFrameworkPage";
 import OilGasFrameworkPage       from "@/components/sectors/oil-gas/OilGasFrameworkPage";
 import FertiliserFrameworkPage   from "@/components/sectors/fertiliser/FertiliserFrameworkPage";
+import PowerFrameworkPage        from "@/components/sectors/power/PowerFrameworkPage";
 import Link                      from "next/link";
 
 export default async function SectorPage({
@@ -39,6 +40,7 @@ export default async function SectorPage({
   if (slug === "textiles")   return <TextileFrameworkPage />;
   if (slug === "oil-gas")    return <OilGasFrameworkPage />;
   if (slug === "fertiliser") return <FertiliserFrameworkPage />;
+  if (slug === "power-ipp")  return <PowerFrameworkPage />;
 
   // ── Legacy SectorShell — all other sectors (pending migration) ───────────
   return (
