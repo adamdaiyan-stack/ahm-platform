@@ -20,8 +20,10 @@
 // NAV: sticky desktop sidebar + mobile horizontal pill strip
 //   13 nav items across L1 / L2 / L3 groups
 
-import { getCompaniesBySymbols } from "@/services/api/companies";
-import { getReportsBySector }    from "@/services/api/research";
+import { getCompaniesBySymbols }           from "@/services/api/companies";
+import { getReportsBySector }              from "@/services/api/research";
+import { getSectorBySlug, getSectorDrivers } from "@/services/api/intelligence";
+import { buildSectorConfig }               from "@/lib/sector-adapter";
 import { CEMENT_SYMBOLS }        from "@/constants";
 import cementData                from "@/data/sectors/cement";
 
@@ -171,10 +173,14 @@ function tab(id: string): string {
 // ── Main page — async server component ───────────────────────────────────────
 
 export default async function CementFrameworkPage() {
-  const [companies, reports] = await Promise.all([
+  const [companies, reports, sector, drivers] = await Promise.all([
     getCompaniesBySymbols(CEMENT_SYMBOLS),
     getReportsBySector("Cement"),
+    getSectorBySlug("cement"),
+    getSectorDrivers("cement"),
   ]);
+
+  const config = buildSectorConfig(sector, drivers, CEMENT_CONFIG);
 
   const analyticsSlot = (
     <>
@@ -350,7 +356,7 @@ export default async function CementFrameworkPage() {
 
   return (
     <SectorPageFrame
-      config={CEMENT_CONFIG}
+      config={config}
       navItems={CEMENT_NAV}
       snapshotData={companies.map((c) => ({
         symbol:         c.symbol,

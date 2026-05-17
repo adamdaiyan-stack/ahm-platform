@@ -26,8 +26,10 @@
 //   source of sector earnings divergence. FFBL and FATIMA pay higher gas rates
 //   and compete on phosphate/NP fertiliser rather than urea economics alone.
 
-import { getCompaniesBySymbols } from "@/services/api/companies";
-import { getReportsBySector }    from "@/services/api/research";
+import { getCompaniesBySymbols }           from "@/services/api/companies";
+import { getReportsBySector }              from "@/services/api/research";
+import { getSectorBySlug, getSectorDrivers } from "@/services/api/intelligence";
+import { buildSectorConfig }               from "@/lib/sector-adapter";
 import { FERTILISER_SYMBOLS }    from "@/constants";
 import fertiliserData            from "@/data/sectors/fertiliser";
 
@@ -197,10 +199,14 @@ function tab(id: string): string {
 // ── Main page — async server component ───────────────────────────────────────
 
 export default async function FertiliserFrameworkPage() {
-  const [companies, reports] = await Promise.all([
+  const [companies, reports, sector, drivers] = await Promise.all([
     getCompaniesBySymbols(FERTILISER_SYMBOLS),
     getReportsBySector("Fertiliser"),
+    getSectorBySlug("fertiliser"),
+    getSectorDrivers("fertiliser"),
   ]);
+
+  const config = buildSectorConfig(sector, drivers, FERTILISER_CONFIG);
 
   const analyticsSlot = (
     <>
@@ -393,7 +399,7 @@ export default async function FertiliserFrameworkPage() {
 
   return (
     <SectorPageFrame
-      config={FERTILISER_CONFIG}
+      config={config}
       navItems={FERTILISER_NAV}
       snapshotData={companies.map((c) => ({
         symbol:         c.symbol,
