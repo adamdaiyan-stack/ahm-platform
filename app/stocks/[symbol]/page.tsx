@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { getCompanyBySymbol, getCompanyPeers } from "@/services/api/companies";
-import { getStockCorporateData } from "@/services/api/research";
+import { getStockCorporateData }               from "@/services/api/research";
+import { getFinancialHistory }                 from "@/services/api/fundamentals";
+import { getReportsByTicker }                  from "@/services/api/research";
 import { formatPrice, formatChange, formatPercent, formatVolume, formatMarketCap } from "@/lib/formatters";
-import { Company, Dividend } from "@/types";
-import { SECTOR_SLUG } from "@/constants";
-import StatCard from "@/components/ui/StatCard";
+import { Company, Dividend }                   from "@/types";
+import { SECTOR_SLUG }                         from "@/constants";
+import StatCard                                from "@/components/ui/StatCard";
+import UBLIntelligencePage                     from "@/components/company/ubl/UBLIntelligencePage";
 
-type Announcement = { id: number; symbol: string; title: string; category: string | null; published_at: string; url: string | null };
+type Announcement = { id: number; symbol: string; title: string | null; category: string | null; published_at: string | null; url: string | null; body?: string | null };
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "—";
@@ -32,10 +35,28 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
     );
   }
 
-  const [peers, { dividends, announcements }] = await Promise.all([
+  const [peers, { dividends, announcements }, metrics, reports] = await Promise.all([
     getCompanyPeers(company.sector, sym, 6),
     getStockCorporateData(sym),
+    getFinancialHistory(sym, 8),
+    getReportsByTicker(sym, 4),
   ]);
+
+  // ── Company intelligence routing ──────────────────────────────────────────
+  // UBL has a full intelligence page; expand to other symbols as content is built.
+  // Same pattern as sector routing: slug-based branch, fallback to generic page.
+  if (sym === "UBL") {
+    return (
+      <UBLIntelligencePage
+        company={company}
+        peers={peers}
+        dividends={dividends}
+        announcements={announcements}
+        metrics={metrics}
+        reports={reports}
+      />
+    );
+  }
 
   const isPositive = company.change != null && company.change >= 0;
   const isNegative = company.change != null && company.change < 0;
