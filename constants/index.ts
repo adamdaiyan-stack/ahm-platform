@@ -5,3 +5,4 @@ export * from "./learn";
 export * from "./cement";
 export * from "./textile";
 export * from "./oil-gas";
+export * from "./fertiliser";

@@ -3,24 +3,25 @@
 // Dynamic sector route.
 //
 // MIGRATION ORDER (per docs/sectors/sector-framework-template.md)
-//   Banking   done  → BankingFrameworkPage
-//   Cement    done  → CementFrameworkPage
-//   Textiles  done  → TextileFrameworkPage
-//   Oil & Gas done  → OilGasFrameworkPage
-//   Fertiliser      → pending
+//   Banking    done  → BankingFrameworkPage
+//   Cement     done  → CementFrameworkPage
+//   Textiles   done  → TextileFrameworkPage
+//   Oil & Gas  done  → OilGasFrameworkPage
+//   Fertiliser done  → FertiliserFrameworkPage
 //   Power           → pending
 //   Automobile      → pending
 //
 // To add a new sector: import its FrameworkPage and add an `if` branch below.
 
-import { notFound }           from "next/navigation";
-import { sectorMap }          from "@/data/sectors";
-import SectorShell            from "@/components/sectors/SectorShell";
-import BankingFrameworkPage   from "@/components/sectors/banking/BankingFrameworkPage";
-import CementFrameworkPage    from "@/components/sectors/cement/CementFrameworkPage";
-import TextileFrameworkPage   from "@/components/sectors/textile/TextileFrameworkPage";
-import OilGasFrameworkPage    from "@/components/sectors/oil-gas/OilGasFrameworkPage";
-import Link                   from "next/link";
+import { notFound }              from "next/navigation";
+import { sectorMap }             from "@/data/sectors";
+import SectorShell               from "@/components/sectors/SectorShell";
+import BankingFrameworkPage      from "@/components/sectors/banking/BankingFrameworkPage";
+import CementFrameworkPage       from "@/components/sectors/cement/CementFrameworkPage";
+import TextileFrameworkPage      from "@/components/sectors/textile/TextileFrameworkPage";
+import OilGasFrameworkPage       from "@/components/sectors/oil-gas/OilGasFrameworkPage";
+import FertiliserFrameworkPage   from "@/components/sectors/fertiliser/FertiliserFrameworkPage";
+import Link                      from "next/link";
 
 export default async function SectorPage({
   params,
@@ -33,10 +34,11 @@ export default async function SectorPage({
   if (!sector) notFound();
 
   // ── Framework routes — migrated sectors ─────────────────────────────────
-  if (slug === "banking")  return <BankingFrameworkPage />;
-  if (slug === "cement")   return <CementFrameworkPage />;
-  if (slug === "textiles") return <TextileFrameworkPage />;
-  if (slug === "oil-gas")  return <OilGasFrameworkPage />;
+  if (slug === "banking")    return <BankingFrameworkPage />;
+  if (slug === "cement")     return <CementFrameworkPage />;
+  if (slug === "textiles")   return <TextileFrameworkPage />;
+  if (slug === "oil-gas")    return <OilGasFrameworkPage />;
+  if (slug === "fertiliser") return <FertiliserFrameworkPage />;
 
   // ── Legacy SectorShell — all other sectors (pending migration) ───────────
   return (
