@@ -7,3 +7,4 @@ export * from "./textile";
 export * from "./oil-gas";
 export * from "./fertiliser";
 export * from "./power";
+export * from "./auto";

@@ -9,9 +9,10 @@
 //   Oil & Gas  done  → OilGasFrameworkPage
 //   Fertiliser done  → FertiliserFrameworkPage
 //   Power      done  → PowerFrameworkPage
-//   Automobile      → pending
+//   Automobile done  → AutoFrameworkPage
 //
-// To add a new sector: import its FrameworkPage and add an `if` branch below.
+// All seven sectors migrated. Legacy SectorShell retained for any future
+// sectors added to sectorMap before a FrameworkPage is built.
 
 import { notFound }              from "next/navigation";
 import { sectorMap }             from "@/data/sectors";
@@ -22,6 +23,7 @@ import TextileFrameworkPage      from "@/components/sectors/textile/TextileFrame
 import OilGasFrameworkPage       from "@/components/sectors/oil-gas/OilGasFrameworkPage";
 import FertiliserFrameworkPage   from "@/components/sectors/fertiliser/FertiliserFrameworkPage";
 import PowerFrameworkPage        from "@/components/sectors/power/PowerFrameworkPage";
+import AutoFrameworkPage         from "@/components/sectors/auto/AutoFrameworkPage";
 import Link                      from "next/link";
 
 export default async function SectorPage({
@@ -34,15 +36,16 @@ export default async function SectorPage({
 
   if (!sector) notFound();
 
-  // ── Framework routes — migrated sectors ─────────────────────────────────
+  // ── Framework routes — all sectors migrated ──────────────────────────────
   if (slug === "banking")    return <BankingFrameworkPage />;
   if (slug === "cement")     return <CementFrameworkPage />;
   if (slug === "textiles")   return <TextileFrameworkPage />;
   if (slug === "oil-gas")    return <OilGasFrameworkPage />;
   if (slug === "fertiliser") return <FertiliserFrameworkPage />;
   if (slug === "power-ipp")  return <PowerFrameworkPage />;
+  if (slug === "auto")       return <AutoFrameworkPage />;
 
-  // ── Legacy SectorShell — all other sectors (pending migration) ───────────
+  // ── Legacy SectorShell — fallback for any future unmigrated sectors ──────
   return (
     <div className="sector-root">
       <div
