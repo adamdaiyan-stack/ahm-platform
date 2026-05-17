@@ -15,10 +15,30 @@
 //   Any null/empty DB field falls back to the corresponding value in the
 //   static fallback config. The page never breaks if a DB value is missing.
 //
-// MIGRATION STATUS
-//   Banking:  fully DB-driven (name, accentColor, subtitle, stats, drivers, intelligenceSummary)
-//   Oil & Gas: DB-driven (name, accentColor, subtitle, stats, drivers, intelligenceSummary)
-//   Others:   static fallback only (drivers not yet seeded)
+// MIGRATION STATUS — COMPLETE (all 7 sectors fully DB-driven)
+//
+//   All sectors now have the following fields seeded in the sectors table:
+//     name · accentColor · subtitle · intelligenceSummary · stats (JSONB)
+//   All sectors have 6 rows seeded in sector_drivers table.
+//
+//   Sector        subtitle  intel_summary  stats  drivers
+//   ─────────     ────────  ─────────────  ─────  ───────
+//   banking       ✓ DB      ✓ DB           ✓ DB   ✓ DB
+//   cement        ✓ DB      ✓ DB           ✓ DB   ✓ DB
+//   oil-gas       ✓ DB      ✓ DB           ✓ DB   ✓ DB
+//   fertiliser    ✓ DB      ✓ DB           ✓ DB   ✓ DB
+//   power-ipp     ✓ DB      ✓ DB           ✓ DB   ✓ DB
+//   textiles      ✓ DB      ✓ DB           ✓ DB   ✓ DB
+//   auto          ✓ DB      ✓ DB           ✓ DB   ✓ DB
+//
+// FALLBACK ROLE (static configs in each FrameworkPage)
+//   Static fallback configs (BANKING_CONFIG, CEMENT_CONFIG, etc.) are retained
+//   for emergency fallback ONLY. They are NOT the primary source of truth.
+//   They activate only if:
+//     - Supabase is unreachable
+//     - getSectorBySlug() returns null
+//     - A DB field is null or missing
+//   Do NOT remove them until production stability is fully validated.
 
 import type { Sector, SectorDriver as DbSectorDriver } from "@/types";
 import type { SectorFrameworkConfig } from "@/components/sectors/framework";
