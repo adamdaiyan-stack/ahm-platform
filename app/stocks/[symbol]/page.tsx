@@ -7,7 +7,113 @@ import { formatPrice, formatChange, formatPercent, formatVolume, formatMarketCap
 import { Company, Dividend }                   from "@/types";
 import { SECTOR_SLUG }                         from "@/constants";
 import StatCard                                from "@/components/ui/StatCard";
-import UBLIntelligencePage                     from "@/components/company/ubl/UBLIntelligencePage";
+
+// ── Company intelligence pages ────────────────────────────────────────────────
+// Architecture: each symbol routes to a thin wrapper that builds a
+// CompanyIntelligenceConfig and delegates to CompanyIntelligencePage.
+// Adding a new company = create intelligence.ts + add routing branch below.
+// No component rewrites. No layout changes. Framework is fully reusable.
+import CompanyIntelligencePage, { type CompanyIntelligenceConfig } from "@/components/company/CompanyIntelligencePage";
+
+// Intelligence configs
+import {
+  UBL_THESIS_SUMMARY, UBL_THESIS_THEMES, UBL_DRIVERS, UBL_RISKS, UBL_CATALYSTS,
+  UBL_VALUATION_POINTS, UBL_VALUATION_SUMMARY, UBL_VALUATION_HISTORICAL_RANGE, UBL_VALUATION_PEER_CONTEXT,
+  UBL_DIVIDEND_COMMENTARY, UBL_DIVIDEND_YIELD_POSITIONING, UBL_DIVIDEND_CONSISTENCY_NOTE,
+} from "@/components/company/ubl/ubl-intelligence";
+
+import {
+  HBL_THESIS_SUMMARY, HBL_THESIS_THEMES, HBL_DRIVERS, HBL_RISKS, HBL_CATALYSTS,
+  HBL_VALUATION_POINTS, HBL_VALUATION_SUMMARY, HBL_VALUATION_HISTORICAL_RANGE, HBL_VALUATION_PEER_CONTEXT,
+  HBL_DIVIDEND_COMMENTARY, HBL_DIVIDEND_YIELD_POSITIONING, HBL_DIVIDEND_CONSISTENCY_NOTE,
+} from "@/components/company/hbl/hbl-intelligence";
+
+import {
+  MCB_THESIS_SUMMARY, MCB_THESIS_THEMES, MCB_DRIVERS, MCB_RISKS, MCB_CATALYSTS,
+  MCB_VALUATION_POINTS, MCB_VALUATION_SUMMARY, MCB_VALUATION_HISTORICAL_RANGE, MCB_VALUATION_PEER_CONTEXT,
+  MCB_DIVIDEND_COMMENTARY, MCB_DIVIDEND_YIELD_POSITIONING, MCB_DIVIDEND_CONSISTENCY_NOTE,
+} from "@/components/company/mcb/mcb-intelligence";
+
+import {
+  OGDC_THESIS_SUMMARY, OGDC_THESIS_THEMES, OGDC_DRIVERS, OGDC_RISKS, OGDC_CATALYSTS,
+  OGDC_VALUATION_POINTS, OGDC_VALUATION_SUMMARY, OGDC_VALUATION_HISTORICAL_RANGE, OGDC_VALUATION_PEER_CONTEXT,
+  OGDC_DIVIDEND_COMMENTARY, OGDC_DIVIDEND_YIELD_POSITIONING, OGDC_DIVIDEND_CONSISTENCY_NOTE,
+} from "@/components/company/ogdc/ogdc-intelligence";
+
+// ── Company intelligence config registry ─────────────────────────────────────
+// Adding a new company: create intelligence.ts, import above, add entry here.
+// Everything else is automatic.
+
+const COMPANY_CONFIGS: Record<string, CompanyIntelligenceConfig> = {
+  UBL: {
+    accentColor:              "#3b82f6",
+    exchangeLabel:            "Commercial Bank",
+    peersLabel:               "Banking Peers",
+    thesisSummary:            UBL_THESIS_SUMMARY,
+    thesisThemes:             UBL_THESIS_THEMES,
+    drivers:                  UBL_DRIVERS,
+    risks:                    UBL_RISKS,
+    catalysts:                UBL_CATALYSTS,
+    valuationPoints:          UBL_VALUATION_POINTS,
+    valuationSummary:         UBL_VALUATION_SUMMARY,
+    valuationHistoricalRange: UBL_VALUATION_HISTORICAL_RANGE,
+    valuationPeerContext:     UBL_VALUATION_PEER_CONTEXT,
+    dividendCommentary:       UBL_DIVIDEND_COMMENTARY,
+    dividendYieldPositioning: UBL_DIVIDEND_YIELD_POSITIONING,
+    dividendConsistencyNote:  UBL_DIVIDEND_CONSISTENCY_NOTE,
+  },
+  HBL: {
+    accentColor:              "#16a34a",
+    exchangeLabel:            "Commercial Bank",
+    peersLabel:               "Banking Peers",
+    thesisSummary:            HBL_THESIS_SUMMARY,
+    thesisThemes:             HBL_THESIS_THEMES,
+    drivers:                  HBL_DRIVERS,
+    risks:                    HBL_RISKS,
+    catalysts:                HBL_CATALYSTS,
+    valuationPoints:          HBL_VALUATION_POINTS,
+    valuationSummary:         HBL_VALUATION_SUMMARY,
+    valuationHistoricalRange: HBL_VALUATION_HISTORICAL_RANGE,
+    valuationPeerContext:     HBL_VALUATION_PEER_CONTEXT,
+    dividendCommentary:       HBL_DIVIDEND_COMMENTARY,
+    dividendYieldPositioning: HBL_DIVIDEND_YIELD_POSITIONING,
+    dividendConsistencyNote:  HBL_DIVIDEND_CONSISTENCY_NOTE,
+  },
+  MCB: {
+    accentColor:              "#be123c",
+    exchangeLabel:            "Commercial Bank",
+    peersLabel:               "Banking Peers",
+    thesisSummary:            MCB_THESIS_SUMMARY,
+    thesisThemes:             MCB_THESIS_THEMES,
+    drivers:                  MCB_DRIVERS,
+    risks:                    MCB_RISKS,
+    catalysts:                MCB_CATALYSTS,
+    valuationPoints:          MCB_VALUATION_POINTS,
+    valuationSummary:         MCB_VALUATION_SUMMARY,
+    valuationHistoricalRange: MCB_VALUATION_HISTORICAL_RANGE,
+    valuationPeerContext:     MCB_VALUATION_PEER_CONTEXT,
+    dividendCommentary:       MCB_DIVIDEND_COMMENTARY,
+    dividendYieldPositioning: MCB_DIVIDEND_YIELD_POSITIONING,
+    dividendConsistencyNote:  MCB_DIVIDEND_CONSISTENCY_NOTE,
+  },
+  OGDC: {
+    accentColor:              "#d97706",
+    exchangeLabel:            "Oil & Gas Exploration",
+    peersLabel:               "Energy Sector Peers",
+    thesisSummary:            OGDC_THESIS_SUMMARY,
+    thesisThemes:             OGDC_THESIS_THEMES,
+    drivers:                  OGDC_DRIVERS,
+    risks:                    OGDC_RISKS,
+    catalysts:                OGDC_CATALYSTS,
+    valuationPoints:          OGDC_VALUATION_POINTS,
+    valuationSummary:         OGDC_VALUATION_SUMMARY,
+    valuationHistoricalRange: OGDC_VALUATION_HISTORICAL_RANGE,
+    valuationPeerContext:     OGDC_VALUATION_PEER_CONTEXT,
+    dividendCommentary:       OGDC_DIVIDEND_COMMENTARY,
+    dividendYieldPositioning: OGDC_DIVIDEND_YIELD_POSITIONING,
+    dividendConsistencyNote:  OGDC_DIVIDEND_CONSISTENCY_NOTE,
+  },
+};
 
 type Announcement = { id: number; symbol: string; title: string | null; category: string | null; published_at: string | null; url: string | null; body?: string | null };
 
@@ -15,8 +121,6 @@ function fmtDate(iso: string | null): string {
   if (!iso) return "—";
   return new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 }
-
-
 
 const WA_BASE = "https://wa.me/923001234567";
 
@@ -43,11 +147,14 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
   ]);
 
   // ── Company intelligence routing ──────────────────────────────────────────
-  // UBL has a full intelligence page; expand to other symbols as content is built.
-  // Same pattern as sector routing: slug-based branch, fallback to generic page.
-  if (sym === "UBL") {
+  // Registry-driven: any symbol in COMPANY_CONFIGS gets the full intelligence page.
+  // All other symbols fall through to the generic stock page below.
+  // To add a new company: create intelligence.ts + add to COMPANY_CONFIGS above.
+  const config = COMPANY_CONFIGS[sym];
+  if (config) {
     return (
-      <UBLIntelligencePage
+      <CompanyIntelligencePage
+        config={config}
         company={company}
         peers={peers}
         dividends={dividends}
@@ -287,14 +394,10 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
           <div className="max-w-6xl">
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
-                <p className="text-xs text-tx-disabled uppercase tracking-widest font-mono">
-                  Sector Peers
-                </p>
+                <p className="text-xs text-tx-disabled uppercase tracking-widest font-mono">Sector Peers</p>
                 {SECTOR_SLUG[company.sector] ? (
-                  <Link
-                    href={"/sectors/" + SECTOR_SLUG[company.sector]}
-                    className="text-xs font-mono font-semibold text-tx-primary bg-surface border border-border-theme rounded-full px-3 py-1 hover:border-tx-secondary hover:bg-raised transition-all"
-                  >
+                  <Link href={"/sectors/" + SECTOR_SLUG[company.sector]}
+                    className="text-xs font-mono font-semibold text-tx-primary bg-surface border border-border-theme rounded-full px-3 py-1 hover:border-tx-secondary hover:bg-raised transition-all">
                     {company.sector} ↗
                   </Link>
                 ) : (
@@ -303,52 +406,34 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
               </div>
               <Link
                 href={SECTOR_SLUG[company.sector] ? "/sectors/" + SECTOR_SLUG[company.sector] : "/stocks?sector=" + encodeURIComponent(company.sector)}
-                className="text-xs font-mono text-tx-secondary hover:text-tx-primary transition-colors"
-              >
+                className="text-xs font-mono text-tx-secondary hover:text-tx-primary transition-colors">
                 {SECTOR_SLUG[company.sector] ? "View sector module →" : "View all " + company.sector + " stocks →"}
               </Link>
             </div>
-
-            {/* Peer card grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {peers.map((peer) => {
                 const peerPos   = peer.change_percent != null && peer.change_percent >= 0;
                 const peerNeg   = peer.change_percent != null && peer.change_percent < 0;
-                const peerColor = peer.change_percent == null ? "text-tx-disabled"
-                                : peerPos ? "text-gain" : "text-loss";
+                const peerColor = peer.change_percent == null ? "text-tx-disabled" : peerPos ? "text-gain" : "text-loss";
                 const peerBg    = peerPos ? "bg-emerald-500/10" : peerNeg ? "bg-red-500/10" : "bg-surface";
                 return (
-                  <Link
-                    key={peer.id}
-                    href={"/stocks/" + peer.symbol}
-                    className="group bg-surface border border-border-theme rounded-xl p-4 hover:border-tx-secondary hover:bg-raised transition-all"
-                  >
-                    {/* Ticker + change */}
+                  <Link key={peer.id} href={"/stocks/" + peer.symbol}
+                    className="group bg-surface border border-border-theme rounded-xl p-4 hover:border-tx-secondary hover:bg-raised transition-all">
                     <div className="flex items-start justify-between mb-1">
-                      <span className="font-mono font-bold text-tx-primary group-hover:text-gain transition-colors text-sm">
-                        {peer.symbol}
-                      </span>
+                      <span className="font-mono font-bold text-tx-primary group-hover:text-gain transition-colors text-sm">{peer.symbol}</span>
                       <span className={"text-xs font-mono font-semibold tabular-nums px-1.5 py-0.5 rounded " + peerBg + " " + peerColor}>
                         {formatPercent(peer.change_percent)}
                       </span>
                     </div>
-                    {/* Company name */}
-                    <p className="text-tx-disabled text-xs truncate mb-3 leading-tight">
-                      {peer.company_name}
-                    </p>
-                    {/* Metrics */}
+                    <p className="text-tx-disabled text-xs truncate mb-3 leading-tight">{peer.company_name}</p>
                     <div className="space-y-1.5 border-t border-border-theme pt-3">
                       <div className="flex justify-between">
                         <span className="text-xs text-tx-disabled font-mono">Price</span>
-                        <span className="text-xs font-mono text-tx-primary font-semibold tabular-nums">
-                          {formatPrice(peer.current_price)}
-                        </span>
+                        <span className="text-xs font-mono text-tx-primary font-semibold tabular-nums">{formatPrice(peer.current_price)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-xs text-tx-disabled font-mono">Mkt Cap</span>
-                        <span className="text-xs font-mono text-tx-secondary tabular-nums">
-                          {formatMarketCap(peer.market_cap)}
-                        </span>
+                        <span className="text-xs font-mono text-tx-secondary tabular-nums">{formatMarketCap(peer.market_cap)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-xs text-tx-disabled font-mono">P/E</span>

@@ -122,6 +122,26 @@ export type FinancialMetrics = {
   pat_growth:     number | null;
   eps_growth:     number | null;
 
+  // ── Sector-specific intelligence metrics ────────────────────────────────
+  // NULL for companies where the metric is not applicable.
+  // The rendering layer (FinancialSnapshot) detects presence and adapts.
+  //
+  // Banking / financial institutions
+  nim:              number | null;   // Net Interest Margin %
+  casa_ratio:       number | null;   // Current + Savings Accounts as % of total deposits
+  npl_ratio:        number | null;   // Non-Performing Loans as % of gross advances
+  coverage_ratio:   number | null;   // Provision coverage % of NPLs
+  car:              number | null;   // Capital Adequacy Ratio %
+  cost_to_income:   number | null;   // Operating costs as % of operating income
+  deposit_growth:   number | null;   // YoY deposit growth %
+  advance_growth:   number | null;   // YoY gross advances growth %
+  //
+  // Future sector extensions (added via ALTER TABLE as sectors are built out):
+  //   Oil & Gas:  production_volume, lifting_cost, reserve_replacement_ratio
+  //   Cement:     dispatch_growth, retention_price, coal_cost_per_ton
+  //   Power:      circular_debt_receivable, capacity_utilization
+  //   Textiles:   export_revenue_pct, ltff_rate_benefit
+
   source:         string;
   notes:          string | null;
   created_at:     string;

@@ -50,6 +50,27 @@ type FinancialSnapshotProps = {
 export default function FinancialSnapshot({ latest, history }: FinancialSnapshotProps) {
   const m = latest;
 
+  // Banking metric signal flags — computed outside JSX to avoid TSX parser ambiguity
+  const hasBanking = m != null && (m.nim != null || m.casa_ratio != null);
+  const b = m ? {
+    nimPos:  m.nim            != null && m.nim            > 6.5,
+    nimNeg:  m.nim            != null && m.nim            < 4.5,
+    casaPos: m.casa_ratio     != null && m.casa_ratio     > 55,
+    casaNeg: m.casa_ratio     != null && m.casa_ratio     < 40,
+    nplPos:  m.npl_ratio      != null && m.npl_ratio      < 6,
+    nplNeg:  m.npl_ratio      != null && m.npl_ratio      > 9,
+    covPos:  m.coverage_ratio != null && m.coverage_ratio > 90,
+    covNeg:  m.coverage_ratio != null && m.coverage_ratio < 80,
+    carPos:  m.car            != null && m.car            > 17,
+    carNeg:  m.car            != null && m.car            < 13,
+    ctiPos:  m.cost_to_income != null && m.cost_to_income < 42,
+    ctiNeg:  m.cost_to_income != null && m.cost_to_income > 55,
+    depPos:  m.deposit_growth != null && m.deposit_growth > 10,
+    depNeg:  m.deposit_growth != null && m.deposit_growth < 0,
+    advPos:  m.advance_growth != null && m.advance_growth > 10,
+    advNeg:  m.advance_growth != null && m.advance_growth < 0,
+  } : null;
+
   return (
     <section>
       <div className="flex items-center justify-between mb-3">
@@ -74,12 +95,12 @@ export default function FinancialSnapshot({ latest, history }: FinancialSnapshot
               Profitability
             </p>
             <div className="mt-3">
-              <MetricRow label="EPS (PKR)"     value={fmt(m.eps)}              context="Earnings per share" />
-              <MetricRow label="PAT"            value={fmtBn(m.pat)}           unit=" PKR" context="Profit after tax" />
-              <MetricRow label="ROE"            value={fmt(m.roe)}             unit="%"    context="Return on equity"
+              <MetricRow label="EPS (PKR)"  value={fmt(m.eps)}       context="Earnings per share" />
+              <MetricRow label="PAT"        value={fmtBn(m.pat)}     unit=" PKR" context="Profit after tax" />
+              <MetricRow label="ROE"        value={fmt(m.roe)}       unit="%"    context="Return on equity"
                 positive={m.roe != null && m.roe > 15} negative={m.roe != null && m.roe < 8} />
-              <MetricRow label="Net Margin"     value={fmt(m.net_margin)}      unit="%"    context="PAT / Revenue" />
-              <MetricRow label="PAT Growth"     value={fmt(m.pat_growth)}      unit="%"    context="YoY change"
+              <MetricRow label="Net Margin" value={fmt(m.net_margin)} unit="%"   context="PAT / Revenue" />
+              <MetricRow label="PAT Growth" value={fmt(m.pat_growth)} unit="%"   context="YoY change"
                 positive={m.pat_growth != null && m.pat_growth > 0}
                 negative={m.pat_growth != null && m.pat_growth < 0} />
             </div>
@@ -91,14 +112,38 @@ export default function FinancialSnapshot({ latest, history }: FinancialSnapshot
               Valuation &amp; Returns
             </p>
             <div className="mt-3">
-              <MetricRow label="P/E Ratio"      value={fmt(m.pe_ratio)}        unit="x"    context="Price to earnings" />
-              <MetricRow label="P/B Ratio"      value={fmt(m.pb_ratio)}        unit="x"    context="Price to book" />
-              <MetricRow label="DPS (PKR)"       value={fmt(m.dps)}                        context="Dividend per share" />
-              <MetricRow label="Dividend Yield"  value={fmt(m.dividend_yield)}  unit="%"    context="At current price" />
-              <MetricRow label="Payout Ratio"    value={fmt(m.payout_ratio)}    unit="%"    context="DPS / EPS" />
+              <MetricRow label="P/E Ratio"     value={fmt(m.pe_ratio)}       unit="x" context="Price to earnings" />
+              <MetricRow label="P/B Ratio"     value={fmt(m.pb_ratio)}       unit="x" context="Price to book" />
+              <MetricRow label="DPS (PKR)"     value={fmt(m.dps)}                     context="Dividend per share" />
+              <MetricRow label="Div Yield"     value={fmt(m.dividend_yield)} unit="%" context="At current price" />
+              <MetricRow label="Payout Ratio"  value={fmt(m.payout_ratio)}   unit="%" context="DPS / EPS" />
             </div>
           </div>
+        </div>
+      )}
 
+      {/* Banking Intelligence Panel — data-presence-driven, no hardcoded sector checks */}
+      {hasBanking && m && b && (
+        <div className="mt-4 bg-surface border border-border-theme rounded-xl p-5">
+          <p className="text-xs font-mono text-tx-disabled uppercase tracking-widest mb-1">
+            Banking Intelligence
+          </p>
+          <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-x-8">
+            {/* Left column — margin & quality */}
+            <div>
+              <MetricRow label="Net Interest Margin" value={fmt(m.nim)}            unit="%" context="Spread on interest-earning assets"    positive={b.nimPos}  negative={b.nimNeg}  />
+              <MetricRow label="CASA Ratio"          value={fmt(m.casa_ratio)}     unit="%" context="Low-cost deposits as % of total"      positive={b.casaPos} negative={b.casaNeg} />
+              <MetricRow label="NPL Ratio"           value={fmt(m.npl_ratio)}      unit="%" context="Non-performing loans / gross advances" positive={b.nplPos}  negative={b.nplNeg}  />
+              <MetricRow label="Coverage Ratio"      value={fmt(m.coverage_ratio)} unit="%" context="Provision coverage of NPLs"           positive={b.covPos}  negative={b.covNeg}  />
+            </div>
+            {/* Right column — capital & growth */}
+            <div>
+              <MetricRow label="CAR"            value={fmt(m.car)}            unit="%" context="Capital Adequacy Ratio (min 11.5%)"  positive={b.carPos} negative={b.carNeg} />
+              <MetricRow label="Cost-to-Income" value={fmt(m.cost_to_income)} unit="%" context="Operating efficiency ratio"          positive={b.ctiPos} negative={b.ctiNeg} />
+              <MetricRow label="Deposit Growth" value={fmt(m.deposit_growth)} unit="%" context="YoY growth in total deposits"        positive={b.depPos} negative={b.depNeg} />
+              <MetricRow label="Advance Growth" value={fmt(m.advance_growth)} unit="%" context="YoY growth in gross advances"        positive={b.advPos} negative={b.advNeg} />
+            </div>
+          </div>
         </div>
       )}
 
