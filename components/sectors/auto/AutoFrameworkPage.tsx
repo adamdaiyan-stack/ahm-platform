@@ -29,8 +29,10 @@
 //   with high localisation mandates but persistent FX sensitivity on imported CBUs,
 //   kits, and components.
 
-import { getCompaniesBySymbols } from "@/services/api/companies";
-import { getReportsBySector }    from "@/services/api/research";
+import { getCompaniesBySymbols }           from "@/services/api/companies";
+import { getReportsBySector }              from "@/services/api/research";
+import { getSectorBySlug, getSectorDrivers } from "@/services/api/intelligence";
+import { buildSectorConfig }               from "@/lib/sector-adapter";
 import { AUTO_SYMBOLS }          from "@/constants";
 import autoData                  from "@/data/sectors/auto";
 
@@ -214,10 +216,14 @@ function tab(id: string): string {
 // ── Main page — async server component ───────────────────────────────────────
 
 export default async function AutoFrameworkPage() {
-  const [companies, reports] = await Promise.all([
+  const [companies, reports, sector, drivers] = await Promise.all([
     getCompaniesBySymbols(AUTO_SYMBOLS),
     getReportsBySector("Automobile"),
+    getSectorBySlug("auto"),
+    getSectorDrivers("auto"),
   ]);
+
+  const config = buildSectorConfig(sector, drivers, AUTO_CONFIG);
 
   const analyticsSlot = (
     <>
@@ -419,7 +425,7 @@ export default async function AutoFrameworkPage() {
 
   return (
     <SectorPageFrame
-      config={AUTO_CONFIG}
+      config={config}
       navItems={AUTO_NAV}
       snapshotData={companies.map((c) => ({
         symbol:         c.symbol,

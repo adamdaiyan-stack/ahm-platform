@@ -22,8 +22,10 @@
 //   PKR depreciation is a tailwind. Western consumer cycles drive demand.
 //   Value chain position (spinning vs garments) determines margin profile.
 
-import { getCompaniesBySymbols } from "@/services/api/companies";
-import { getReportsBySector }    from "@/services/api/research";
+import { getCompaniesBySymbols }           from "@/services/api/companies";
+import { getReportsBySector }              from "@/services/api/research";
+import { getSectorBySlug, getSectorDrivers } from "@/services/api/intelligence";
+import { buildSectorConfig }               from "@/lib/sector-adapter";
 import { TEXTILE_SYMBOLS }       from "@/constants";
 import textilesData              from "@/data/sectors/textiles";
 
@@ -180,10 +182,14 @@ function tab(id: string): string {
 // ── Main page — async server component ───────────────────────────────────────
 
 export default async function TextileFrameworkPage() {
-  const [companies, reports] = await Promise.all([
+  const [companies, reports, sector, drivers] = await Promise.all([
     getCompaniesBySymbols(TEXTILE_SYMBOLS),
     getReportsBySector("Textiles"),
+    getSectorBySlug("textiles"),
+    getSectorDrivers("textiles"),
   ]);
+
+  const config = buildSectorConfig(sector, drivers, TEXTILE_CONFIG);
 
   const analyticsSlot = (
     <>
@@ -373,7 +379,7 @@ export default async function TextileFrameworkPage() {
 
   return (
     <SectorPageFrame
-      config={TEXTILE_CONFIG}
+      config={config}
       navItems={TEXTILE_NAV}
       snapshotData={companies.map((c) => ({
         symbol:         c.symbol,

@@ -27,8 +27,10 @@
 //   Pakistan has Rs5.73T peak circular debt in the power chain (Jul 2024), making
 //   receivable quality the dominant analytical variable, not generation volume.
 
-import { getCompaniesBySymbols } from "@/services/api/companies";
-import { getReportsBySector }    from "@/services/api/research";
+import { getCompaniesBySymbols }           from "@/services/api/companies";
+import { getReportsBySector }              from "@/services/api/research";
+import { getSectorBySlug, getSectorDrivers } from "@/services/api/intelligence";
+import { buildSectorConfig }               from "@/lib/sector-adapter";
 import { POWER_SYMBOLS }         from "@/constants";
 import powerData                 from "@/data/sectors/power-ipp";
 
@@ -205,10 +207,14 @@ function tab(id: string): string {
 // ── Main page — async server component ───────────────────────────────────────
 
 export default async function PowerFrameworkPage() {
-  const [companies, reports] = await Promise.all([
+  const [companies, reports, sector, drivers] = await Promise.all([
     getCompaniesBySymbols(POWER_SYMBOLS),
     getReportsBySector("Power"),
+    getSectorBySlug("power-ipp"),
+    getSectorDrivers("power-ipp"),
   ]);
+
+  const config = buildSectorConfig(sector, drivers, POWER_CONFIG);
 
   const analyticsSlot = (
     <>
@@ -405,7 +411,7 @@ export default async function PowerFrameworkPage() {
 
   return (
     <SectorPageFrame
-      config={POWER_CONFIG}
+      config={config}
       navItems={POWER_NAV}
       snapshotData={companies.map((c) => ({
         symbol:         c.symbol,
