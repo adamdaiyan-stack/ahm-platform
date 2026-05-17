@@ -26,6 +26,8 @@
 
 import { getCompaniesBySymbols } from "@/services/api/companies";
 import { getReportsBySector }    from "@/services/api/research";
+import { getSectorBySlug, getSectorDrivers } from "@/services/api/intelligence";
+import { buildSectorConfig }     from "@/lib/sector-adapter";
 import { OIL_GAS_SYMBOLS }       from "@/constants";
 import oilGasData                from "@/data/sectors/oil-gas";
 
@@ -193,10 +195,15 @@ function tab(id: string): string {
 // ── Main page — async server component ───────────────────────────────────────
 
 export default async function OilGasFrameworkPage() {
-  const [companies, reports] = await Promise.all([
+  const [companies, reports, sector, drivers] = await Promise.all([
     getCompaniesBySymbols(OIL_GAS_SYMBOLS),
     getReportsBySector("Oil & Gas"),
+    getSectorBySlug("oil-gas"),
+    getSectorDrivers("oil-gas"),
   ]);
+
+  // Build fully DB-driven config — OIL_GAS_CONFIG is the typed fallback only.
+  const config = buildSectorConfig(sector, drivers, OIL_GAS_CONFIG);
 
   const analyticsSlot = (
     <>
@@ -378,7 +385,7 @@ export default async function OilGasFrameworkPage() {
 
   return (
     <SectorPageFrame
-      config={OIL_GAS_CONFIG}
+      config={config}
       navItems={OIL_GAS_NAV}
       snapshotData={companies.map((c) => ({
         symbol:         c.symbol,

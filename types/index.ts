@@ -139,6 +139,11 @@ export type FinancialMetricsSummary = Pick<FinancialMetrics,
 // ─── Sectors ──────────────────────────────────────────────────────────────────
 export type SectorStatus = "active" | "coming_soon" | "archived";
 
+export type SectorStatItem = {
+  val: string;
+  lbl: string;
+};
+
 export type Sector = {
   id:                   number;
   slug:                 string;
@@ -148,6 +153,7 @@ export type Sector = {
   subtitle:             string | null;
   intelligence_summary: string | null;
   volume_label:         string | null;
+  stats:                SectorStatItem[] | null;
   status:               SectorStatus;
   sort_order:           number;
   created_at:           string;

@@ -20,8 +20,8 @@
 
 import { getCompaniesBySymbols } from "@/services/api/companies";
 import { getReportsBySector }    from "@/services/api/research";
-import { getSectorDrivers }      from "@/services/api/intelligence";
-import type { SectorDriver as DbSectorDriver } from "@/types";
+import { getSectorBySlug, getSectorDrivers } from "@/services/api/intelligence";
+import { buildSectorConfig }     from "@/lib/sector-adapter";
 import { BANK_SYMBOLS }          from "@/constants";
 import bankingData               from "@/data/sectors/banking";
 
@@ -155,32 +155,17 @@ function tab(id: string): string {
 
 // ── Main page — async server component ────────────────────────────────────────
 
-// ── DB driver adapter ────────────────────────────────────────────────────────
-// Maps database SectorDriver rows to the SectorFrameworkConfig driver shape.
-// Falls back to the static BANKING_CONFIG.drivers if the DB returns nothing.
-function adaptDbDrivers(rows: DbSectorDriver[]): SectorFrameworkConfig["drivers"] {
-  return rows.map((r) => ({
-    label:       r.label,
-    description: r.description,
-    current:     r.current_reading ?? "",
-    trend:       r.trend,
-  }));
-}
-
 export default async function BankingFrameworkPage() {
-  const [companies, reports, dbDrivers] = await Promise.all([
+  const [companies, reports, sector, drivers] = await Promise.all([
     getCompaniesBySymbols(BANK_SYMBOLS),
     getReportsBySector("Banking"),
+    getSectorBySlug("banking"),
     getSectorDrivers("banking"),
   ]);
 
-  // Use DB-driven drivers when available; fall back to static config
-  const drivers = dbDrivers.length > 0
-    ? adaptDbDrivers(dbDrivers)
-    : BANKING_CONFIG.drivers;
-
-  // Merge DB drivers into config (all other fields remain static for now)
-  const config: SectorFrameworkConfig = { ...BANKING_CONFIG, drivers };
+  // Build fully DB-driven config — BANKING_CONFIG is the typed fallback only.
+  // Field-by-field fallback: any null DB value falls back to the static value.
+  const config = buildSectorConfig(sector, drivers, BANKING_CONFIG);
 
   const analyticsSlot = (
     <>
