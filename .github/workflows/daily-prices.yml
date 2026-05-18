@@ -1,0 +1,124 @@
+# ============================================================
+# AHM Platform — Daily Price Ingestion
+# Runs Mon–Fri at 4:45 PM PKT (11:45 UTC) after PSX closes at 3:30 PM.
+# The 75-minute buffer gives PSX time to publish EOD data.
+#
+# Secrets required (set in GitHub → Settings → Secrets → Actions):
+#   SUPABASE_URL              → Your Supabase project URL
+#   SUPABASE_SERVICE_ROLE_KEY → Service role key (NOT the anon key)
+#
+# Manual trigger:
+#   GitHub → Actions → Daily Price Ingestion → Run workflow
+#   Optionally pass a specific date to backfill: --date=2026-05-15
+# ============================================================
+
+name: Daily Price Ingestion
+
+on:
+  schedule:
+    # 11:45 UTC = 4:45 PM PKT (Pakistan Standard Time, UTC+5)
+    # Runs Mon–Fri only
+    - cron: "45 11 * * 1-5"
+
+  # Allow manual trigger from GitHub Actions UI
+  workflow_dispatch:
+    inputs:
+      run_date:
+        description: "Date to ingest (YYYY-MM-DD). Leave blank for today."
+        required: false
+        default: ""
+      force:
+        description: "Force run even on weekends (for backfill)"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+jobs:
+  ingest:
+    name: Ingest PSX Prices
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      SUPABASE_URL:              ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NODE_ENV:                  production
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      # ── Build date argument ─────────────────────────────────────────────
+      - name: Resolve run date
+        id: date
+        run: |
+          if [ -n "${{ github.event.inputs.run_date }}" ]; then
+            echo "date_arg=--date=${{ github.event.inputs.run_date }}" >> $GITHUB_OUTPUT
+          else
+            echo "date_arg=" >> $GITHUB_OUTPUT
+          fi
+
+      # ── Build force flag ────────────────────────────────────────────────
+      - name: Resolve force flag
+        id: force
+        run: |
+          if [ "${{ github.event.inputs.force }}" = "true" ]; then
+            echo "force_arg=--force" >> $GITHUB_OUTPUT
+          else
+            echo "force_arg=" >> $GITHUB_OUTPUT
+          fi
+
+      # ── Step 1: Ingest prices ───────────────────────────────────────────
+      - name: Ingest daily prices from DPS PSX
+        run: |
+          npx tsx scripts/pipelines/ingest-daily-prices.ts \
+            ${{ steps.date.outputs.date_arg }} \
+            ${{ steps.force.outputs.force_arg }} \
+            --manual
+
+      # ── Step 2: Sync company snapshots ─────────────────────────────────
+      - name: Sync company snapshot fields
+        run: |
+          npx tsx scripts/pipelines/sync-company-snapshots.ts \
+            ${{ steps.date.outputs.date_arg }}
+
+      # ── Step 3: Build daily snapshots (AI context) ─────────────────────
+      - name: Build daily intelligence snapshots
+        run: |
+          npx tsx scripts/pipelines/build-daily-snapshots.ts \
+            ${{ steps.date.outputs.date_arg }}
+
+      # ── Summary ────────────────────────────────────────────────────────
+      - name: Pipeline complete
+        run: |
+          echo "✅ AHM daily pipeline completed successfully"
+          echo "Check ingestion_runs in Supabase for detailed results."
+
+  # ── Failure notification (optional — add Slack webhook to enable) ──────────
+  # notify-on-failure:
+  #   name: Notify on failure
+  #   needs: ingest
+  #   if: failure()
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Send Slack alert
+  #       uses: slackapi/slack-github-action@v1
+  #       with:
+  #         payload: |
+  #           {
+  #             "text": "❌ AHM price pipeline failed on ${{ github.run_id }}. Check Actions: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+  #           }
+  #       env:
+  #         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

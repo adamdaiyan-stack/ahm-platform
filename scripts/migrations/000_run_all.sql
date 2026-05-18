@@ -1,0 +1,19 @@
+-- ============================================================
+-- AHM Platform — Data Pipeline Migrations (Sprint 1)
+-- Run all migrations in order in the Supabase SQL Editor.
+-- Each migration is idempotent — safe to re-run.
+--
+-- Order:
+--   001 — ingestion_runs
+--   002 — data_quality_flags
+--   003 — daily_prices indexes + adjusted_close columns
+--   004 — index_history
+--   005 — macro_indicators + sector_macro_linkages + seeded linkages
+--   006 — corporate_actions + ttm_dividend_yield view
+--   007 — earnings_calendar
+--   008 — daily_snapshots
+--   009 — pgvector + intelligence_embeddings
+--
+-- If running individually, apply in the numbered order above.
+-- This file is a reference index — run individual files in Supabase.
+-- ============================================================
