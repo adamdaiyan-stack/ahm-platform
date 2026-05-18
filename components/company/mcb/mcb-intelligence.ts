@@ -1,11 +1,13 @@
 // components/company/mcb/mcb-intelligence.ts
 //
 // Static intelligence configuration for MCB Bank Limited.
-// Follows the same pattern as ubl-intelligence.ts.
-// Source of truth until company_intelligence DB table is seeded.
 //
-// MIGRATION STATUS: Static (company_intelligence table not yet built)
-// Future: seed into company_intelligence table, fetch via getCompanyIntelligence("MCB")
+// MIGRATION STATUS: FALLBACK-ONLY
+// DB is now the PRIMARY intelligence source for MCB.
+// Seeded: company_intelligence (1 row) + company_intelligence_blocks (22 rows)
+// This file is retained as a static fallback only — used by getCompanyIntelligence()
+// if the DB query fails or returns null (e.g. during local dev without DB access).
+// DO NOT delete until DB seeding is validated across all environments.
 
 import type {
   ThesisTheme,
@@ -15,7 +17,7 @@ import type {
   ValuationPoint,
 } from "@/components/company";
 
-// ── Investment Thesis ─────────────────────────────────────────────────────────
+// -- Investment Thesis ---------------------------------------------------------
 
 export const MCB_THESIS_SUMMARY =
   "MCB Bank is Pakistan's highest-quality banking franchise — defined by the " +
@@ -46,7 +48,7 @@ export const MCB_THESIS_THEMES: ThesisTheme[] = [
     icon:  "⚙️",
     title: "Cost Efficiency Leader — C/I Ratio ~38%",
     body:
-      "MCB's cost-to-income ratio of ~38% is the sector's best — roughly 10–15ppts " +
+      "MCB's cost-to-income ratio of ~38% is the sector's best — roughly 10-15ppts " +
       "below HBL (~51%) and UBL (~47%). This efficiency is not the result of " +
       "underinvestment — MCB maintains a full branch network and has invested in " +
       "digital channels. It reflects tightly controlled operating expenses relative to " +
@@ -71,15 +73,15 @@ export const MCB_THESIS_THEMES: ThesisTheme[] = [
     title: "Consistent ROE Premium — Compounding Quality",
     body:
       "MCB's combination of superior CASA, lowest costs, and clean loan book produces " +
-      "the sector's highest sustainable ROE — typically 20–25% pre-super-tax, " +
-      "~18–22% at current ETR levels. This ROE premium has historically justified " +
+      "the sector's highest sustainable ROE — typically 20-25% pre-super-tax, " +
+      "~18-22% at current ETR levels. This ROE premium has historically justified " +
       "MCB's sector-leading P/B and P/E multiples. For long-term holders, MCB's " +
       "compounding quality — consistent earnings, reliable dividends, and protected " +
       "downside — makes it the reference holding in any PSX banking portfolio.",
   },
 ];
 
-// ── Company Drivers ───────────────────────────────────────────────────────────
+// -- Company Drivers ----------------------------------------------------------
 
 export const MCB_DRIVERS: CompanyDriver[] = [
   {
@@ -113,7 +115,7 @@ export const MCB_DRIVERS: CompanyDriver[] = [
       "from all PSX banking peers. Maintenance of sub-40% C/I as revenue grows — " +
       "without sacrificing digital investment or branch quality — would validate that " +
       "MCB is in positive operating leverage territory. Any sustained C/I deterioration " +
-      "above 43–44% would signal cost discipline erosion and would compress the premium " +
+      "above 43-44% would signal cost discipline erosion and would compress the premium " +
       "multiple partially.",
     current:     "C/I ~38% — sector's best · positive operating leverage as revenue recovers",
     trend:       "positive",
@@ -145,25 +147,25 @@ export const MCB_DRIVERS: CompanyDriver[] = [
   {
     label:       "Effective Tax Rate — 53% Sector-Wide Overhang",
     description:
-      "Pakistan's ~53% banking ETR suppresses MCB's ROE from a pre-tax ~22–25% to a " +
-      "post-tax ~18–20%. This is the single most significant suppressor of MCB's " +
+      "Pakistan's ~53% banking ETR suppresses MCB's ROE from a pre-tax ~22-25% to a " +
+      "post-tax ~18-20%. This is the single most significant suppressor of MCB's " +
       "P/E and P/B multiples vs international banking peers. ETR reduction is the " +
       "highest-magnitude re-rating catalyst for MCB specifically — given that MCB has " +
       "the highest pre-tax earnings quality among PSX banks. A 5ppt ETR cut would " +
-      "translate to ~12–14% EPS uplift — larger in percentage than peers at equal ETR.",
+      "translate to ~12-14% EPS uplift — larger in percentage than peers at equal ETR.",
     current:     "ETR ~53% — primary re-rating overhang; Federal Budget relief remains the key variable",
     trend:       "watch",
   },
 ];
 
-// ── Risks ─────────────────────────────────────────────────────────────────────
+// -- Risks --------------------------------------------------------------------
 
 export const MCB_RISKS: RiskItem[] = [
   {
     label:       "ETR Persistence — Structural ROE Cap",
     description:
       "The 53% effective tax rate is the primary structural risk to MCB's investment " +
-      "case. Without ETR relief, MCB's post-tax ROE is capped at ~18–20% regardless of " +
+      "case. Without ETR relief, MCB's post-tax ROE is capped at ~18-20% regardless of " +
       "operating performance — a lower level than the 25%+ achievable in a normalised " +
       "tax environment. Long-term persistence of the super tax would permanently " +
       "reduce MCB's compounding return profile.",
@@ -176,7 +178,7 @@ export const MCB_RISKS: RiskItem[] = [
       "CASA — driven by digital wallet substitution of current accounts, mobile banking " +
       "competition, or corporate cash management migration — would erode MCB's cost-of-funds " +
       "advantage and compress NIM. This is a slow-moving structural risk, not an " +
-      "immediate threat, but the direction of CASA over 3–5 years is a critical " +
+      "immediate threat, but the direction of CASA over 3-5 years is a critical " +
       "monitoring variable.",
     severity:    "medium",
   },
@@ -201,7 +203,7 @@ export const MCB_RISKS: RiskItem[] = [
   },
 ];
 
-// ── Catalysts ─────────────────────────────────────────────────────────────────
+// -- Catalysts ----------------------------------------------------------------
 
 export const MCB_CATALYSTS: CatalystItem[] = [
   {
@@ -209,7 +211,7 @@ export const MCB_CATALYSTS: CatalystItem[] = [
     description:
       "Given MCB's highest pre-tax earnings quality in the sector, any banking ETR " +
       "reduction (super tax phase-out or ADR threshold adjustment) has the largest " +
-      "proportional EPS uplift for MCB. A 5ppt ETR cut translates to ~12–14% post-tax " +
+      "proportional EPS uplift for MCB. A 5ppt ETR cut translates to ~12-14% post-tax " +
       "EPS improvement — more than any other PSX bank on a percentage basis. This " +
       "remains the highest-magnitude near-term re-rating catalyst.",
     horizon:     "near",
@@ -247,68 +249,68 @@ export const MCB_CATALYSTS: CatalystItem[] = [
   },
 ];
 
-// ── Valuation ─────────────────────────────────────────────────────────────────
+// -- Valuation ----------------------------------------------------------------
 
 export const MCB_VALUATION_SUMMARY =
   "MCB commands the sector's highest P/E multiple — justified by its superior CASA, " +
-  "lowest C/I, and cleanest loan book. At 5–7x forward P/E, MCB is not cheap on an " +
+  "lowest C/I, and cleanest loan book. At 5-7x forward P/E, MCB is not cheap on an " +
   "absolute basis — but relative to its ROE, growth prospects, and quality metrics, " +
   "the premium is rational. The most compelling entry signal is not price alone but " +
   "the combination of depressed ETR expectations and a forward EPS trough — when " +
-  "both resolve, MCB re-rates rapidly. At 8–12% dividend yield (at various price " +
+  "both resolve, MCB re-rates rapidly. At 8-12% dividend yield (at various price " +
   "levels), MCB provides income investors a high-quality yield anchor with re-rating " +
   "optionality attached.";
 
 export const MCB_VALUATION_HISTORICAL_RANGE =
   "MCB P/E has ranged 4x (peak stress) to 10x (recovery peaks). " +
-  "P/B of 1.0–1.5x reflects consistent ROE premium vs sector. " +
+  "P/B of 1.0-1.5x reflects consistent ROE premium vs sector. " +
   "Current multiples compress toward the lower end of the range — ETR is the primary distortion.";
 
 export const MCB_VALUATION_PEER_CONTEXT =
-  "MCB's P/E premium over HBL and UBL (typically +25–40%) reflects the CASA, C/I, " +
+  "MCB's P/E premium over HBL and UBL (typically +25-40%) reflects the CASA, C/I, " +
   "and NPL quality gap. This premium has persisted across rate cycles. The premium " +
   "is rational as long as MCB maintains CASA above 65% and C/I below 42%.";
 
 export const MCB_VALUATION_POINTS: ValuationPoint[] = [
   {
     metric:  "P/E Ratio",
-    current: "5–7x",
+    current: "5-7x",
     context: "Sector premium — justified by ROE",
     signal:  "fair",
   },
   {
     metric:  "P/B Ratio",
-    current: "~1.1–1.3x",
+    current: "~1.1-1.3x",
     context: "Premium to book — reflects ROE quality",
     signal:  "fair",
   },
   {
     metric:  "Div Yield",
-    current: "8–12%",
+    current: "8-12%",
     context: "High yield, highest payout capacity",
     signal:  "cheap",
   },
   {
     metric:  "ROE",
-    current: "~18–22%",
+    current: "~18-22%",
     context: "Sector-highest — suppressed only by ETR",
     signal:  "cheap",
   },
 ];
 
-// ── Dividend commentary ───────────────────────────────────────────────────────
+// -- Dividend commentary ------------------------------------------------------
 
 export const MCB_DIVIDEND_COMMENTARY =
   "MCB is Pakistan's most reliable large-cap dividend payer — with an unbroken " +
   "dividend history spanning multiple economic cycles, currency crises, and political " +
   "transitions. The combination of sector-leading ROE, lowest C/I, and strongest CAR " +
   "(>20%) means MCB's dividend payout capacity is structurally the highest in the " +
-  "banking sector. DPS has historically ranged from Rs20–35, with consistent interim " +
+  "banking sector. DPS has historically ranged from Rs20-35, with consistent interim " +
   "and final dividend announcements. MCB's dividend discipline — maintaining payouts " +
   "even in compressed earnings years — reflects board confidence in earnings normalisation.";
 
 export const MCB_DIVIDEND_YIELD_POSITIONING =
-  "MCB's dividend yield of 8–12% (at various price points) — combined with its " +
+  "MCB's dividend yield of 8-12% (at various price points) — combined with its " +
   "quality premium multiple — makes it the most attractive risk-adjusted income " +
   "holding in the PSX banking sector. Unlike some peers, MCB's dividend is not " +
   "a yield-trap signal — it reflects genuine earnings quality and capital surplus.";
@@ -316,4 +318,4 @@ export const MCB_DIVIDEND_YIELD_POSITIONING =
 export const MCB_DIVIDEND_CONSISTENCY_NOTE =
   "Unbroken dividend history across all economic stress periods in the past two decades. " +
   "One of only two PSX large-caps to have maintained dividends through the IMF " +
-  "program of FY23–24. CAR >20% provides exceptional dividend sustainability buffer.";
+  "program of FY23-24. CAR >20% provides exceptional dividend sustainability buffer.";

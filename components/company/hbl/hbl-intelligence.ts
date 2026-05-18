@@ -1,11 +1,13 @@
 // components/company/hbl/hbl-intelligence.ts
 //
 // Static intelligence configuration for HBL (Habib Bank Limited).
-// Follows the same pattern as ubl-intelligence.ts.
-// Source of truth until company_intelligence DB table is seeded.
 //
-// MIGRATION STATUS: Static (company_intelligence table not yet built)
-// Future: seed into company_intelligence table, fetch via getCompanyIntelligence("HBL")
+// MIGRATION STATUS: FALLBACK-ONLY
+// DB is now the PRIMARY intelligence source for HBL.
+// Seeded: company_intelligence (1 row) + company_intelligence_blocks (22 rows)
+// This file is retained as a static fallback only — used by getCompanyIntelligence()
+// if the DB query fails or returns null (e.g. during local dev without DB access).
+// DO NOT delete until DB seeding is validated across all environments.
 
 import type {
   ThesisTheme,
@@ -15,7 +17,7 @@ import type {
   ValuationPoint,
 } from "@/components/company";
 
-// ── Investment Thesis ─────────────────────────────────────────────────────────
+// -- Investment Thesis ---------------------------------------------------------
 
 export const HBL_THESIS_SUMMARY =
   "HBL is Pakistan's largest commercial bank by assets — a franchise with unrivalled " +
@@ -75,7 +77,7 @@ export const HBL_THESIS_THEMES: ThesisTheme[] = [
   },
 ];
 
-// ── Company Drivers ───────────────────────────────────────────────────────────
+// -- Company Drivers ----------------------------------------------------------
 
 export const HBL_DRIVERS: CompanyDriver[] = [
   {
@@ -84,7 +86,7 @@ export const HBL_DRIVERS: CompanyDriver[] = [
       "HBL's largest single earnings variable is the SBP policy rate. As Pakistan's " +
       "biggest bank, HBL holds the largest absolute PKR government securities portfolio — " +
       "making it the most exposed to yield compression in an easing cycle. NIM peaked " +
-      "in FY24 and will compress over the next 4–6 quarters. However, as the largest " +
+      "in FY24 and will compress over the next 4-6 quarters. However, as the largest " +
       "lender, HBL captures the earliest and largest volume upside when private credit " +
       "demand recovers, providing a natural offset.",
     current:     "12.0% (May 2025) — easing cycle compressing NIM, volume recovery pending",
@@ -106,19 +108,19 @@ export const HBL_DRIVERS: CompanyDriver[] = [
   {
     label:       "CASA Ratio & Cost of Funds",
     description:
-      "HBL's CASA ratio (~52–55%) is lower than MCB (~68%) but supported by an unmatched " +
+      "HBL's CASA ratio (~52-55%) is lower than MCB (~68%) but supported by an unmatched " +
       "branch network and HBL Konnect's branchless penetration. The direction of CASA " +
       "improvement matters more than the absolute level — meaningful CASA growth reduces " +
       "cost of funds and structurally improves NIM. Digital channel investment is the " +
-      "primary CASA growth lever for the next 3–5 years.",
-    current:     "CASA ~52–55% · improvement trajectory via digital and branch network",
+      "primary CASA growth lever for the next 3-5 years.",
+    current:     "CASA ~52-55% · improvement trajectory via digital and branch network",
     trend:       "positive",
   },
   {
     label:       "Asset Quality & Provisioning Cycle",
     description:
       "HBL's NPL ratio is slightly elevated vs MCB given its larger exposure to " +
-      "corporate, SME, and consumer segments that felt stress in the FY23–24 high-rate " +
+      "corporate, SME, and consumer segments that felt stress in the FY23-24 high-rate " +
       "environment. Provisioning adequacy and NPL resolution are key earnings quality " +
       "monitors. A rate-cut cycle improving borrower debt-service capacity would reduce " +
       "new NPL formation — a positive for HBL's provisioning trajectory from FY26 onward.",
@@ -150,7 +152,7 @@ export const HBL_DRIVERS: CompanyDriver[] = [
   },
 ];
 
-// ── Risks ─────────────────────────────────────────────────────────────────────
+// -- Risks --------------------------------------------------------------------
 
 export const HBL_RISKS: RiskItem[] = [
   {
@@ -159,7 +161,7 @@ export const HBL_RISKS: RiskItem[] = [
       "As Pakistan's largest bank with the biggest government securities portfolio, " +
       "HBL faces the largest absolute NIM compression in the current rate-cut cycle. " +
       "If the SBP cuts faster or deeper than expected, and private credit recovery lags, " +
-      "EPS pressure in FY25–26 could be more severe than sector consensus.",
+      "EPS pressure in FY25-26 could be more severe than sector consensus.",
     severity:    "high",
   },
   {
@@ -194,13 +196,13 @@ export const HBL_RISKS: RiskItem[] = [
   },
 ];
 
-// ── Catalysts ─────────────────────────────────────────────────────────────────
+// -- Catalysts ----------------------------------------------------------------
 
 export const HBL_CATALYSTS: CatalystItem[] = [
   {
     label:       "Private Credit Recovery & ADR Improvement",
     description:
-      "As SBP rate cuts reach borrowers (typically 2–4 quarter lag), private sector " +
+      "As SBP rate cuts reach borrowers (typically 2-4 quarter lag), private sector " +
       "credit demand recovers. HBL, as the largest lender, captures the largest absolute " +
       "volume uplift. ADR improvement simultaneously reduces the tax penalty — creating " +
       "a double earnings tailwind. This is the central medium-term recovery catalyst.",
@@ -236,60 +238,60 @@ export const HBL_CATALYSTS: CatalystItem[] = [
   },
 ];
 
-// ── Valuation ─────────────────────────────────────────────────────────────────
+// -- Valuation ----------------------------------------------------------------
 
 export const HBL_VALUATION_SUMMARY =
   "HBL trades at a modest discount to sector peers (MCB, UBL) — reflecting its larger " +
   "NIM sensitivity, slightly elevated NPL ratio, and historical governance perception " +
-  "gap relative to MCB. At 4–6x forward P/E, the stock prices in significant earnings " +
+  "gap relative to MCB. At 4-6x forward P/E, the stock prices in significant earnings " +
   "headwinds. A recovery in credit volume, stabilisation of international operations, " +
   "and any ETR relief would rapidly compress this discount. The dividend yield — " +
-  "typically 8–12% — provides a meaningful total-return floor while investors wait for " +
+  "typically 8-12% — provides a meaningful total-return floor while investors wait for " +
   "earnings recovery. HBL is best positioned as a value recovery play with franchise " +
   "upside, not a stable-growth compounder.";
 
 export const HBL_VALUATION_HISTORICAL_RANGE =
   "HBL P/E has historically ranged 3x (crisis periods) to 8x (recovery peaks). " +
-  "Current 4–5x reflects compressed near-term earnings expectations. " +
-  "P/B of ~0.8–0.9x trades below MCB (~1.2x) — the franchise discount vs highest-ROE peer.";
+  "Current 4-5x reflects compressed near-term earnings expectations. " +
+  "P/B of ~0.8-0.9x trades below MCB (~1.2x) — the franchise discount vs highest-ROE peer.";
 
 export const HBL_VALUATION_PEER_CONTEXT =
-  "MCB commands a ~30–40% P/E premium for superior ROE and CASA. UBL trades roughly " +
+  "MCB commands a ~30-40% P/E premium for superior ROE and CASA. UBL trades roughly " +
   "in line. HBL's discount is a function of size complexity, international execution " +
   "risk, and NIM sensitivity — catalysts above would close this gap meaningfully.";
 
 export const HBL_VALUATION_POINTS: ValuationPoint[] = [
   {
     metric:  "P/E Ratio",
-    current: "4–6x",
+    current: "4-6x",
     context: "Forward earnings estimate",
     signal:  "cheap",
   },
   {
     metric:  "P/B Ratio",
-    current: "~0.8–0.9x",
+    current: "~0.8-0.9x",
     context: "Below-book franchise discount",
     signal:  "cheap",
   },
   {
     metric:  "Div Yield",
-    current: "8–12%",
+    current: "8-12%",
     context: "At range of price levels",
     signal:  "cheap",
   },
   {
     metric:  "ROE",
-    current: "~14–18%",
+    current: "~14-18%",
     context: "Suppressed by 53% ETR",
     signal:  "fair",
   },
 ];
 
-// ── Dividend commentary ───────────────────────────────────────────────────────
+// -- Dividend commentary ------------------------------------------------------
 
 export const HBL_DIVIDEND_COMMENTARY =
   "HBL has maintained a consistent dividend payout history, with DPS ranging from " +
-  "Rs10–25 across economic cycles. Despite the challenging FY23–24 rate-and-tax " +
+  "Rs10-25 across economic cycles. Despite the challenging FY23-24 rate-and-tax " +
   "environment, HBL continued paying dividends — supported by its capital adequacy " +
   "position (CAR above SBP minimums). HBL's sheer balance sheet size means even a " +
   "modest payout ratio generates meaningful absolute dividend income for shareholders. " +
@@ -297,7 +299,7 @@ export const HBL_DIVIDEND_COMMENTARY =
   "dividend per share growth is a natural follow-on.";
 
 export const HBL_DIVIDEND_YIELD_POSITIONING =
-  "HBL's dividend yield of 8–12% (depending on price) is competitive within the " +
+  "HBL's dividend yield of 8-12% (depending on price) is competitive within the " +
   "banking sector and compares favourably to PSX fixed-income equivalents. The yield " +
   "is partially capped by the 53% ETR — which reduces net distributable earnings — " +
   "but remains attractive on a risk-adjusted basis for dividend-seeking investors.";
