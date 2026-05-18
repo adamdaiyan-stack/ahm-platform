@@ -14,6 +14,7 @@ import StatCard                                from "@/components/ui/StatCard";
 // Adding a new company = create intelligence.ts + add routing branch below.
 // No component rewrites. No layout changes. Framework is fully reusable.
 import CompanyIntelligencePage, { type CompanyIntelligenceConfig } from "@/components/company/CompanyIntelligencePage";
+import { getCompanyIntelligence } from "@/services/api/company-intelligence";
 
 // Intelligence configs
 import {
@@ -147,10 +148,26 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
   ]);
 
   // ── Company intelligence routing ──────────────────────────────────────────
-  // Registry-driven: any symbol in COMPANY_CONFIGS gets the full intelligence page.
-  // All other symbols fall through to the generic stock page below.
-  // To add a new company: create intelligence.ts + add to COMPANY_CONFIGS above.
-  const config = COMPANY_CONFIGS[sym];
+  // DB-first with static fallback.
+  //
+  // Priority:
+  //   1. DB intelligence (company_intelligence + company_intelligence_blocks)
+  //      → assembled by getCompanyIntelligence() via the service + adapter layer
+  //   2. Static COMPANY_CONFIGS registry (TypeScript files) — fallback
+  //   3. Generic stock page — for symbols not yet in either layer
+  //
+  // To add DB intelligence for a new company: seed company_intelligence +
+  //   company_intelligence_blocks rows. No code changes needed.
+  // To add static intelligence for a new company: add to COMPANY_CONFIGS above.
+
+  const staticConfig = COMPANY_CONFIGS[sym] ?? null;
+
+  // Try DB first — returns null if symbol not yet seeded
+  const dbConfig = await getCompanyIntelligence(sym, staticConfig ?? undefined);
+
+  // Resolve: DB config wins; fall back to static; fall through to generic page
+  const config = dbConfig ?? staticConfig;
+
   if (config) {
     return (
       <CompanyIntelligencePage
