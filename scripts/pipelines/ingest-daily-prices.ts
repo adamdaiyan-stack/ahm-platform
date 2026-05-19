@@ -29,58 +29,17 @@ import { validateDailyPrice, flagDataIssues,
          missingSymbolFlag, DataIssue }            from "../utils/data-quality.js";
 import { supabaseAdmin }                           from "../utils/supabase-admin.js";
 import { parseDateArg, isWeekend }                 from "../utils/date-utils.js";
+import { SymbolResolver }                          from "../utils/symbol-resolver.js";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 const PIPELINE_NAME = "daily_prices";
 const SOURCE        = "dps_psx";
 
-// ─── PSX Symbol Normalisation ─────────────────────────────────────────────────
-//
-// PSX appends trading suffixes to symbols on certain days:
-//   XD  — ex-dividend       (e.g. BAFLXD  → BAFL)
-//   XB  — ex-bonus          (e.g. HBLXB   → HBL)
-//   XR  — ex-rights         (e.g. UCLXR   → UCL)
-//   XN  — ex-rights new     (e.g. ENGXN   → ENG)
-//   NC  — odd-lot / no cert (e.g. AMTEXNC → AMTEX)
-//   IM  — interim / rights  (e.g. MCBIM   → MCB)
-//   FUT — futures contract  (stripped entirely)
-//
-// This does NOT affect symbols whose base name legitimately ends with
-// these letters — we only strip when the stripped version is in the
-// companies master (see normalizePSXSymbol below).
-
-const PSX_SUFFIXES = ["XD", "XB", "XR", "XN", "NC", "IM", "FUT"] as const;
-
-/**
- * Strips a known PSX trading suffix from a symbol if the resulting
- * base symbol exists in the companies master. Falls back to the
- * original symbol if no match is found.
- */
-function normalizePSXSymbol(raw: string, knownSymbols: Set<string>): string {
-  if (knownSymbols.has(raw)) return raw; // already a clean match
-  for (const suffix of PSX_SUFFIXES) {
-    if (raw.endsWith(suffix)) {
-      const base = raw.slice(0, -suffix.length);
-      if (base.length > 0 && knownSymbols.has(base)) return base;
-    }
-  }
-  return raw; // no match — keep original, will be flagged as missing
-}
-
 /** Upsert in batches to avoid hitting Supabase request size limits */
 const BATCH_SIZE = 50;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-async function getKnownSymbols(): Promise<Set<string>> {
-  const { data, error } = await supabaseAdmin
-    .from("companies")
-    .select("symbol");
-
-  if (error) throw new Error(`Failed to load companies master: ${error.message}`);
-  return new Set((data ?? []).map((r: { symbol: string }) => r.symbol));
-}
 
 async function getPreviousCloses(
   symbols: string[],
@@ -185,10 +144,10 @@ async function main(): Promise<void> {
   const run = await PipelineLogger.start(PIPELINE_NAME, runDate, SOURCE, trigger);
 
   try {
-    // ── Step 1: Load known symbols ──────────────────────────────────────────
+    // ── Step 1: Build symbol resolver (covers aliases, renames, PSX suffixes) ─
     console.log("Loading companies master...");
-    const knownSymbols = await getKnownSymbols();
-    console.log(`  ${knownSymbols.size} known symbols\n`);
+    const resolver = await SymbolResolver.build();
+    console.log(`  ${resolver.size} known symbols\n`);
 
     // ── Step 2: Fetch from PSX ──────────────────────────────────────────────
     console.log("Fetching from DPS PSX...");
@@ -197,26 +156,27 @@ async function main(): Promise<void> {
 
     // ── Step 3: Validate & filter ───────────────────────────────────────────
     console.log("Validating records...");
-    const symbolList = rawPrices.map((r) => r.symbol);
-    const prevCloses = await getPreviousCloses(symbolList, runDate);
+    const knownSymbols = resolver.getKnownSymbols();
+    const symbolList   = rawPrices.map((r) => r.symbol);
+    const prevCloses   = await getPreviousCloses(symbolList, runDate);
 
     const validRecords:   NormalizedPriceRecord[] = [];
     const invalidRecords: NormalizedPriceRecord[] = [];
     const allIssues:      DataIssue[]             = [];
 
     for (const record of rawPrices) {
-      // Normalise PSX trading suffixes (XD, XB, XR, NC, IM, FUT, etc.)
-      const normalizedSymbol = normalizePSXSymbol(record.symbol, knownSymbols);
-      if (normalizedSymbol !== record.symbol) {
-        // Mutate the record in-place — downstream code uses record.symbol
-        (record as { symbol: string }).symbol = normalizedSymbol;
+      // Resolve symbol: handles aliases (e.g. FAYSAL→FABL), PSX suffixes (XD, XB, …), renames
+      const { canonical, known, changed } = resolver.resolveWithStatus(record.symbol);
+      if (changed) {
+        // Mutate in-place — downstream code uses record.symbol
+        (record as { symbol: string }).symbol = canonical;
       }
 
       // Check symbol is in master
-      if (!knownSymbols.has(record.symbol)) {
+      if (!known) {
         allIssues.push(missingSymbolFlag(record.symbol, SOURCE));
-        // Don't skip — still ingest the price, symbol master may be incomplete
-        // The flag will alert the analyst to add the symbol
+        // Don't skip — still ingest the price, symbol master may be incomplete.
+        // The flag will alert the analyst to add the symbol.
       }
 
       const prevClose = prevCloses.get(record.symbol) ?? null;

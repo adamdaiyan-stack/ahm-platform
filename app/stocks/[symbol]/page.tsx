@@ -2,9 +2,10 @@ import Link from "next/link";
 import { getCompanyBySymbol, getCompanyPeers } from "@/services/api/companies";
 import { getStockCorporateData }               from "@/services/api/research";
 import { getFinancialHistory }                 from "@/services/api/fundamentals";
+import { getStockFinancialData }               from "@/services/api/financials";
 import { getReportsByTicker }                  from "@/services/api/research";
 import { formatPrice, formatChange, formatPercent, formatVolume, formatMarketCap } from "@/lib/formatters";
-import { Company, Dividend }                   from "@/types";
+import { Company, Dividend, FinancialMetrics, FinancialRatioSnapshot } from "@/types";
 import { SECTOR_SLUG }                         from "@/constants";
 import StatCard                                from "@/components/ui/StatCard";
 
@@ -140,11 +141,12 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
     );
   }
 
-  const [peers, { dividends, announcements }, metrics, reports] = await Promise.all([
+  const [peers, { dividends, announcements }, metrics, reports, financialData] = await Promise.all([
     getCompanyPeers(company.sector, sym, 6),
     getStockCorporateData(sym),
     getFinancialHistory(sym, 8),
     getReportsByTicker(sym, 4),
+    getStockFinancialData(sym),
   ]);
 
   // ── Company intelligence routing ──────────────────────────────────────────
@@ -193,6 +195,19 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
     : "bg-surface text-tx-secondary border border-border-theme";
 
   const waText = encodeURIComponent("I was looking at " + sym + " on AHM Platform and want to get daily PSX updates");
+
+  // ── Financial data helpers ─────────────────────────────────────────────────
+  const r = financialData.latestRatios;
+  const fmtPct  = (v: number | null | undefined) => v != null ? `${v.toFixed(1)}%` : "—";
+  const fmtMPkr = (v: number | null | undefined) => v != null ? `PKR ${(v / 1000).toFixed(1)}B` : "—";
+  const annualMetrics = metrics.filter((m: FinancialMetrics) => m.period_type === "annual").slice(0, 5);
+  const hasFinancialData = annualMetrics.length > 0;
+  const incomeRows: Array<{ label: string; field: keyof FinancialMetrics }> = [
+    { label: "Revenue",      field: "revenue" },
+    { label: "Gross Profit", field: "gross_profit" },
+    { label: "EBITDA",       field: "ebitda" },
+    { label: "PAT",          field: "pat" },
+  ];
 
   return (
     <main className="min-h-screen bg-base text-tx-primary">
@@ -267,20 +282,111 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
           </div>
         </section>
 
-        {/* VALUATION RATIOS */}
+        {/* VALUATION & PROFITABILITY */}
         <section>
-          <SectionLabel>Valuation Ratios</SectionLabel>
+          <SectionLabel>Valuation {"&"} Profitability</SectionLabel>
           <div className="bg-surface border border-border-theme rounded-xl p-6">
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              <RatioItem label="P/E Ratio"   value={company.pe_ratio       != null ? company.pe_ratio.toFixed(2)           : "—"} />
-              <RatioItem label="EPS (PKR)"   value={company.eps            != null ? company.eps.toFixed(2)                : "—"} />
-              <RatioItem label="Div Yield"   value={company.dividend_yield != null ? company.dividend_yield.toFixed(2) + "%" : "—"} />
-              <RatioItem label="P/B Ratio"   value="—" muted />
-              <RatioItem label="ROE"         value="—" muted />
-              <RatioItem label="Debt/Equity" value="—" muted />
+              <RatioItem label="P/E Ratio"   value={r?.pe_ratio       != null ? r.pe_ratio.toFixed(2)        : company.pe_ratio       != null ? company.pe_ratio.toFixed(2)       : "—"} muted={r?.pe_ratio == null && company.pe_ratio == null} />
+              <RatioItem label="P/B Ratio"   value={r?.pb_ratio       != null ? r.pb_ratio.toFixed(2)        : "—"} muted={r?.pb_ratio == null} />
+              <RatioItem label="EPS (PKR)"   value={r?.eps            != null ? r.eps.toFixed(2)             : company.eps            != null ? company.eps.toFixed(2)            : "—"} muted={r?.eps == null && company.eps == null} />
+              <RatioItem label="ROE"         value={r?.roe            != null ? r.roe.toFixed(1) + "%"       : "—"} muted={r?.roe == null} />
+              <RatioItem label="Net Margin"  value={r?.net_margin     != null ? r.net_margin.toFixed(1) + "%" : "—"} muted={r?.net_margin == null} />
+              <RatioItem label="Debt/Equity" value={r?.debt_to_equity != null ? r.debt_to_equity.toFixed(2) + "x" : "—"} muted={r?.debt_to_equity == null} />
             </div>
-            <p className="text-xs text-tx-disabled font-mono mt-5">P/B · ROE · Debt/Equity — pending data pipeline</p>
+            <div className="mt-4 pt-4 border-t border-border-theme grid grid-cols-2 md:grid-cols-4 gap-3">
+              <RatioItem label="Div Yield"     value={r?.dividend_yield != null ? r.dividend_yield.toFixed(2) + "%" : company.dividend_yield != null ? company.dividend_yield.toFixed(2) + "%" : "—"} muted={r?.dividend_yield == null && company.dividend_yield == null} />
+              <RatioItem label="EV/EBITDA"     value={r?.ev_ebitda      != null ? r.ev_ebitda.toFixed(2)             : "—"} muted={r?.ev_ebitda == null} />
+              <RatioItem label="Current Ratio" value={r?.current_ratio  != null ? r.current_ratio.toFixed(2) + "x"  : "—"} muted={r?.current_ratio == null} />
+              <RatioItem label="FCF Margin"    value={r?.fcf_margin     != null ? r.fcf_margin.toFixed(1) + "%"      : "—"} muted={r?.fcf_margin == null} />
+            </div>
+            {r != null ? (
+              <p className="text-xs text-tx-disabled font-mono mt-4">
+                Based on {r.period_key} {"·"} Computed {r.computed_at ? new Date(r.computed_at).toLocaleDateString("en-PK") : "—"}
+              </p>
+            ) : (
+              <p className="text-xs text-tx-disabled font-mono mt-4">
+                Full ratio data available once financial statements are loaded for this company
+              </p>
+            )}
           </div>
+        </section>
+
+        {/* FINANCIAL STATEMENTS HISTORY */}
+        <section>
+          <SectionLabel>Financial Statements</SectionLabel>
+          {!hasFinancialData ? (
+            <div className="bg-surface border border-border-theme rounded-xl p-8 text-center">
+              <p className="text-tx-disabled text-sm font-mono">No financial data available for {company.symbol}</p>
+              <p className="text-tx-disabled text-xs mt-1 opacity-60">Data will appear here once financials are loaded via the ingestion pipeline</p>
+            </div>
+          ) : (
+            <div className="bg-surface border border-border-theme rounded-xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[600px]">
+                  <thead>
+                    <tr className="border-b border-border-theme">
+                      <th className="px-4 py-3 text-left text-xs font-mono text-tx-disabled uppercase tracking-widest w-36">Metric</th>
+                      {annualMetrics.map((m: FinancialMetrics) => (
+                        <th key={m.period} className="px-4 py-3 text-right text-xs font-mono text-tx-disabled uppercase tracking-widest">
+                          {m.period}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border-theme">
+                    {incomeRows.map(({ label, field }) => (
+                      <tr key={field} className="hover:bg-raised transition-colors">
+                        <td className="px-4 py-2.5 text-xs text-tx-secondary font-medium">{label}</td>
+                        {annualMetrics.map((m: FinancialMetrics) => (
+                          <td key={m.period} className="px-4 py-2.5 text-right font-mono text-tx-primary text-xs tabular-nums">
+                            {fmtMPkr(m[field] as number | null)}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                    <tr className="border-t-2 border-border-theme hover:bg-raised transition-colors">
+                      <td className="px-4 py-2.5 text-xs text-tx-secondary font-medium">EPS</td>
+                      {annualMetrics.map((m: FinancialMetrics) => (
+                        <td key={m.period} className="px-4 py-2.5 text-right font-mono text-tx-primary text-xs tabular-nums">
+                          {m.eps != null ? "PKR " + m.eps.toFixed(2) : "—"}
+                        </td>
+                      ))}
+                    </tr>
+                    <tr className="hover:bg-raised transition-colors">
+                      <td className="px-4 py-2.5 text-xs text-tx-secondary font-medium">DPS</td>
+                      {annualMetrics.map((m: FinancialMetrics) => (
+                        <td key={m.period} className="px-4 py-2.5 text-right font-mono text-gain text-xs tabular-nums">
+                          {m.dps != null ? "PKR " + m.dps.toFixed(2) : "—"}
+                        </td>
+                      ))}
+                    </tr>
+                    <tr className="hover:bg-raised transition-colors">
+                      <td className="px-4 py-2.5 text-xs text-tx-secondary font-medium">Net Margin</td>
+                      {annualMetrics.map((m: FinancialMetrics) => (
+                        <td key={m.period} className="px-4 py-2.5 text-right font-mono text-tx-primary text-xs tabular-nums">
+                          {fmtPct(m.net_margin)}
+                        </td>
+                      ))}
+                    </tr>
+                    <tr className="hover:bg-raised transition-colors">
+                      <td className="px-4 py-2.5 text-xs text-tx-secondary font-medium">ROE</td>
+                      {annualMetrics.map((m: FinancialMetrics) => (
+                        <td key={m.period} className="px-4 py-2.5 text-right font-mono text-tx-primary text-xs tabular-nums">
+                          {fmtPct(m.roe)}
+                        </td>
+                      ))}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div className="px-4 py-2.5 border-t border-border-theme">
+                <p className="text-xs text-tx-disabled font-mono">
+                  All monetary values in PKR billions {"·"} Annual periods only
+                </p>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* PRICE CHART PLACEHOLDER */}

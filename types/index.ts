@@ -142,6 +142,60 @@ export type FinancialMetrics = {
   //   Power:      circular_debt_receivable, capacity_utilization
   //   Textiles:   export_revenue_pct, ltff_rate_benefit
 
+  // Extended IS columns (migration 022)
+  revenue_from_operations:   number | null;
+  other_income:              number | null;
+  cost_of_revenue:           number | null;
+  distribution_expense:      number | null;
+  admin_expense:             number | null;
+  operating_profit:          number | null;
+  depreciation_amortisation: number | null;
+  finance_cost:              number | null;
+  profit_before_tax:         number | null;
+  tax_expense:               number | null;
+
+  // Extended BS columns (migration 022)
+  current_assets:       number | null;
+  cash_and_equivalents: number | null;
+  inventories:          number | null;
+  trade_receivables:    number | null;
+  total_liabilities:    number | null;
+  current_liabilities:  number | null;
+  trade_payables:       number | null;
+  long_term_debt:       number | null;
+  net_debt:             number | null;
+  share_capital:        number | null;
+  retained_earnings:    number | null;
+  shares_outstanding:   number | null;
+  enterprise_value:     number | null;
+
+  // Extended CF columns (migration 022)
+  cfi:            number | null;
+  cff:            number | null;
+  dividends_paid: number | null;
+
+  // Extended ratio columns (migration 022)
+  operating_margin:    number | null;
+  current_ratio:       number | null;
+  net_debt_to_ebitda:  number | null;
+  cfo_to_pat:          number | null;
+  fcf_margin:          number | null;
+  revenue_cagr_3y:     number | null;
+  pat_cagr_3y:         number | null;
+  bvps:                number | null;
+  cfps:                number | null;
+
+  // Audit fields (migration 022)
+  is_consolidated:   boolean;
+  is_ttm:            boolean;
+  ttm_components:    string[] | null;
+  is_restated:       boolean;
+  restatement_notes: string | null;
+  confidence:        number;
+  upload_batch_id:   string | null;
+  reviewed_by:       string | null;
+  reviewed_at:       string | null;
+
   source:         string;
   notes:          string | null;
   created_at:     string;
@@ -155,6 +209,154 @@ export type FinancialMetricsSummary = Pick<FinancialMetrics,
   | "roe" | "net_margin" | "dps" | "dividend_yield"
   | "revenue_growth" | "pat_growth"
 >;
+
+// ─── Financial Ratio Snapshots ────────────────────────────────────────────────
+// Computed ratios with peer comparison — from financial_ratio_snapshots table.
+
+export type PeerContext = {
+  rank:       number;
+  percentile: number;
+  sector_avg: number | null;
+  sector_n:   number;
+  best:       number | null;
+  worst:      number | null;
+};
+
+export type FinancialRatioSnapshot = {
+  id:                  string;
+  symbol:              string;
+  period_key:          string;
+  snapshot_date:       string;
+  period_type:         string | null;
+  is_ttm:              boolean;
+
+  // Market inputs
+  price_used:          number | null;
+  market_cap_used:     number | null;
+  shares_outstanding:  number | null;
+  enterprise_value:    number | null;
+
+  // Valuation
+  pe_ratio:            number | null;
+  pb_ratio:            number | null;
+  ev_ebitda:           number | null;
+  ps_ratio:            number | null;
+  ev_revenue:          number | null;
+  fcf_yield:           number | null;
+  dividend_yield:      number | null;
+
+  // Profitability
+  gross_margin:        number | null;
+  ebitda_margin:       number | null;
+  operating_margin:    number | null;
+  net_margin:          number | null;
+  roe:                 number | null;
+  roa:                 number | null;
+  roce:                number | null;
+
+  // Growth
+  revenue_growth:      number | null;
+  pat_growth:          number | null;
+  eps_growth:          number | null;
+  revenue_cagr_3y:     number | null;
+  pat_cagr_3y:         number | null;
+
+  // Balance sheet / Leverage
+  debt_to_equity:      number | null;
+  net_debt_to_ebitda:  number | null;
+  current_ratio:       number | null;
+  interest_cover:      number | null;
+
+  // Cash flow
+  cfo_to_pat:          number | null;
+  fcf_margin:          number | null;
+  capex_to_revenue:    number | null;
+
+  // Per share
+  eps:                 number | null;
+  bvps:                number | null;
+  cfps:                number | null;
+  dps:                 number | null;
+  payout_ratio:        number | null;
+
+  // Banking
+  nim:                 number | null;
+  casa_ratio:          number | null;
+  npl_ratio:           number | null;
+  coverage_ratio:      number | null;
+  car:                 number | null;
+  cost_to_income:      number | null;
+
+  // Peer comparison
+  peer_context:        Record<string, PeerContext> | null;
+  peer_computed_at:    string | null;
+  computed_at:         string;
+};
+
+// ─── Financial Reporting Periods ──────────────────────────────────────────────
+
+export type FinancialReportingPeriod = {
+  id:                number;
+  symbol:            string;
+  period_key:        string;
+  period_type:       string;
+  fiscal_year:       number;
+  period_num:        number | null;
+  period_start:      string | null;
+  period_end:        string;
+  is_announced:      boolean;
+  announcement_date: string | null;
+  is_ttm:            boolean;
+  ttm_components:    string[] | null;
+  display_label:     string | null;
+  year_end_month:    number;
+  created_at:        string;
+  updated_at:        string;
+};
+
+// ─── Financial Statement Lines ─────────────────────────────────────────────────
+
+export type FinancialStatementLine = {
+  id:               string;
+  symbol:           string;
+  period_key:       string;
+  statement_type:   string;
+  metric_code:      string;
+  raw_label:        string | null;
+  value:            number;
+  value_unit:       string;
+  is_consolidated:  boolean;
+  confidence:       number;
+  upload_batch_id:  string | null;
+  source:           string;
+  notes:            string | null;
+  created_at:       string;
+  updated_at:       string;
+};
+
+// ─── Financial Upload Batches ─────────────────────────────────────────────────
+
+export type FinancialUploadBatch = {
+  id:               string;
+  batch_name:       string;
+  source_type:      string;
+  source_reference: string | null;
+  submitted_by:     string;
+  submitted_at:     string;
+  symbols_affected: string[];
+  periods_affected: string[];
+  records_planned:  number | null;
+  records_applied:  number;
+  records_failed:   number;
+  status:           string;
+  reviewed_by:      string | null;
+  reviewed_at:      string | null;
+  review_notes:     string | null;
+  applied_at:       string | null;
+  notes:            string | null;
+  created_at:       string;
+  updated_at:       string;
+};
 
 // ─── Sectors ──────────────────────────────────────────────────────────────────
 export type SectorStatus = "active" | "coming_soon" | "archived";
@@ -229,7 +431,6 @@ export type SectorIntelBlock = {
   updated_at:      string;
 };
 
-// ─── Market Index ─────────────────────────────────────────────────────────────
 export type MarketIndex = {
   index_name:     string;
   level:          number | null;
@@ -256,7 +457,7 @@ export type Dividend = {
   symbol:         string;
   financial_year: string | null;
   period:         string | null;
-  dividend_type:  string | null;    // 'interim', 'final', 'special', 'bonus'
+  dividend_type:  string | null;
   amount:         number | null;
   announced_date: string | null;
   book_closure:   string | null;
@@ -319,9 +520,7 @@ export type ResearchReportSummary = Pick<ResearchReport,
 >;
 
 // ─── Company Intelligence ─────────────────────────────────────────────────────
-// Schema version: Company Intelligence Database Architecture Phase
 
-/** Block types for company_intelligence_blocks table. */
 export type CompanyIntelBlockType =
   | "thesis_theme"
   | "driver"
@@ -329,69 +528,44 @@ export type CompanyIntelBlockType =
   | "catalyst"
   | "valuation_point";
 
-/** Trend signal — shared across drivers and blocks. */
 export type CompanyDriverTrend = "positive" | "negative" | "neutral" | "watch";
 
-/** Scalar intelligence fields per company (company_intelligence table). */
 export type CompanyIntelScalars = {
   id:                          number;
   symbol:                      string;
-
-  // Visual identity
   accent_color:                string;
   exchange_label:              string | null;
   peers_label:                 string | null;
-
-  // Investment thesis
   thesis_summary:              string | null;
-
-  // Valuation commentary
   valuation_summary:           string | null;
   valuation_historical_range:  string | null;
   valuation_peer_context:      string | null;
-
-  // Dividend commentary
   dividend_commentary:         string | null;
   dividend_yield_positioning:  string | null;
   dividend_consistency_note:   string | null;
-
   is_active:                   boolean;
   source:                      string;
   created_at:                  string;
   updated_at:                  string;
 };
 
-/**
- * Normalized intelligence block (company_intelligence_blocks table).
- * One row per item: thesis theme, driver, risk, catalyst, or valuation point.
- * All type-specific fields are present at the row level for query performance.
- * Fields not applicable to a block type are null.
- */
 export type CompanyIntelBlock = {
-  id:              string;   // uuid
+  id:              string;
   symbol:          string;
   block_type:      CompanyIntelBlockType;
   sort_order:      number;
-
-  // Core content
   title:           string;
   body:            string | null;
-  content:         Record<string, unknown>;  // type-specific structured data
-
-  // Type-specific signal fields (null when not applicable to block_type)
-  trend:           CompanyDriverTrend | null;   // drivers
-  severity:        "high" | "medium" | "low" | null;  // risks
-  horizon:         "near" | "medium" | "long" | null; // catalysts
-  signal:          "cheap" | "fair" | "rich" | null;  // valuation_point
-  icon:            string | null;              // thesis_theme emoji
-  metric:          string | null;              // valuation_point metric label
-  current_val:     string | null;              // driver current reading / valuation current value
-
-  // Queryability
+  content:         Record<string, unknown>;
+  trend:           CompanyDriverTrend | null;
+  severity:        "high" | "medium" | "low" | null;
+  horizon:         "near" | "medium" | "long" | null;
+  signal:          "cheap" | "fair" | "rich" | null;
+  icon:            string | null;
+  metric:          string | null;
+  current_val:     string | null;
   tags:            string[];
   related_symbols: string[];
-
-  // Lifecycle
   is_active:       boolean;
   source:          string;
   created_at:      string;

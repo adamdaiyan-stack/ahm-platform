@@ -23,7 +23,13 @@
     "audit:universe": "tsx --env-file=.env.local scripts/validation/audit-company-universe.ts",
     "audit:universe:json": "tsx --env-file=.env.local scripts/validation/audit-company-universe.ts --json",
     "verify:propagation": "tsx --env-file=.env.local scripts/validation/verify-data-propagation.ts",
-    "verify:market-index": "tsx --env-file=.env.local scripts/validation/verify-data-propagation.ts"
+    "verify:market-index": "tsx --env-file=.env.local scripts/validation/verify-data-propagation.ts",
+    "ingest:financials": "tsx --env-file=.env.local scripts/pipelines/ingest-financials.ts",
+    "ingest:financials:apply": "tsx --env-file=.env.local scripts/pipelines/ingest-financials.ts --apply",
+    "calc:ratios": "tsx --env-file=.env.local scripts/pipelines/calculate-financial-ratios.ts",
+    "compute:peers": "tsx --env-file=.env.local scripts/pipelines/compute-peer-rankings.ts",
+    "audit:financials": "tsx --env-file=.env.local scripts/validation/audit-financials.ts",
+    "pipeline:financials": "npm run audit:financials && npm run calc:ratios && npm run compute:peers"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",
