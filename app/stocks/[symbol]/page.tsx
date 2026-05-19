@@ -352,6 +352,46 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
           </section>
         </div>
 
+        {/* INVESTMENT THESIS */}
+        <section>
+          <SectionLabel>Investment Thesis</SectionLabel>
+          <PendingSection
+            title={company.symbol + " — Investment Thesis"}
+            description={"A structured investment thesis for " + company.company_name + " is pending AHM analyst coverage. Once published, this section will cover the core long/short rationale, key themes, and positioning context."}
+            items={["Bull / bear case summary", "Thesis themes", "Analyst conviction rating"]}
+          />
+        </section>
+
+        {/* KEY VALUE DRIVERS */}
+        <section>
+          <SectionLabel>Key Value Drivers</SectionLabel>
+          <PendingSection
+            title="Value Drivers"
+            description="This section will highlight the 3–5 most important operational and financial levers that determine this company's intrinsic value."
+            items={["Revenue growth drivers", "Margin expansion / compression levers", "Capital allocation priorities"]}
+          />
+        </section>
+
+        {/* KEY RISKS */}
+        <section>
+          <SectionLabel>Key Risks</SectionLabel>
+          <PendingSection
+            title="Risk Register"
+            description="A structured risk register covering macro, sector, company-specific, and regulatory risks will be populated when AHM research coverage begins."
+            items={["Macro / interest rate exposure", "Sector-specific regulatory risk", "Company-specific operational risk"]}
+          />
+        </section>
+
+        {/* CATALYSTS */}
+        <section>
+          <SectionLabel>Catalysts</SectionLabel>
+          <PendingSection
+            title="Upcoming Catalysts"
+            description="Identifiable near-term events that could re-rate this stock — earnings dates, regulatory decisions, capacity announcements, and dividend declarations."
+            items={["Earnings season dates", "Regulatory / policy decisions", "Capacity or contract announcements"]}
+          />
+        </section>
+
         {/* ANALYST NOTE */}
         <section>
           <SectionLabel>AHM Analyst Note</SectionLabel>
@@ -490,3 +530,39 @@ function RatioItem({ label, value, muted }: { label: string; value: string; mute
     </div>
   );
 }
+
+/**
+ * PendingSection — structural placeholder for Investment Thesis, Key Drivers,
+ * Key Risks, and Catalysts sections in the generic stock page shell.
+ *
+ * Renders the same layout skeleton that CompanyIntelligencePage uses for these
+ * sections, so the page structure is consistent across all 90 companies.
+ * When analyst coverage is added (via COMPANY_CONFIGS or DB intelligence),
+ * the page automatically routes to CompanyIntelligencePage instead.
+ */
+function PendingSection({ title, description, items }: {
+  title:       string;
+  description: string;
+  items:       string[];
+}) {
+  return (
+    <div className="bg-surface border border-border-theme rounded-xl p-6">
+      <div className="flex items-start justify-between mb-3">
+        <h3 className="text-tx-secondary font-semibold text-sm">{title}</h3>
+        <span className="text-[10px] font-mono text-tx-disabled bg-raised border border-border-theme px-2 py-0.5 rounded uppercase tracking-widest flex-shrink-0 ml-3">
+          Pending Coverage
+        </span>
+      </div>
+      <p className="text-tx-disabled text-sm leading-relaxed mb-4">{description}</p>
+      <ul className="space-y-2 border-t border-border-theme pt-4">
+        {items.map((item) => (
+          <li key={item} className="flex items-center gap-2 text-xs text-tx-disabled font-mono">
+            <span className="w-1.5 h-1.5 rounded-full bg-border-theme flex-shrink-0" />
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+   
