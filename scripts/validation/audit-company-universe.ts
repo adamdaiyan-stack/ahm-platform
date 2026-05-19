@@ -130,7 +130,7 @@ async function getSymbolsWithSnapshotOnDate(date: string): Promise<Set<string>> 
   const { data, error } = await supabaseAdmin
     .from("daily_snapshots")
     .select("symbol")
-    .eq("market_date", date)
+    .eq("snapshot_date", date)
     .limit(10_000);
 
   if (error) {

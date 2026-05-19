@@ -81,12 +81,14 @@ async function writePipelineAlerts(
   if (missingSymbols.length === 0) return;
 
   const rows = missingSymbols.map((symbol) => ({
-    pipeline_name: PIPELINE_NAME,
-    alert_type:    "missing_data",
-    severity:      "warning",
-    message:       `No price record for ${symbol} on ${runDate}`,
-    context:       { symbol, market_date: runDate },
-    status:        "open",
+    pipeline:    PIPELINE_NAME,
+    alert_type:  "missing_data",
+    severity:    "warning",
+    symbol,
+    market_date: runDate,
+    message:     `No price record for ${symbol} on ${runDate}`,
+    detail:      { symbol, market_date: runDate },
+    is_resolved: false,
   }));
 
   const { error } = await supabaseAdmin

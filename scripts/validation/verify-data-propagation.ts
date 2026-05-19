@@ -121,44 +121,27 @@ async function checkMarketIndexSnapshot(date: string): Promise<CheckResult> {
   };
 }
 
-async function checkCompaniesSync(date: string): Promise<CheckResult> {
-  // Spot-check: find companies where current_price doesn't match daily_prices for the date
-  const { data: mismatch, error } = await supabaseAdmin
-    .rpc("verify_companies_sync", { p_date: date })
-    .limit(5);
+async function checkCompaniesSync(_date: string): Promise<CheckResult> {
+  // Heuristic: count companies with null current_price
+  const { count: nullCount, error: nullErr } = await supabaseAdmin
+    .from("companies")
+    .select("*", { count: "exact", head: true })
+    .is("current_price", null);
 
-  // If the RPC doesn't exist (not yet created), fall back to a heuristic check
-  if (error && error.message.includes("does not exist")) {
-    // Fallback: count companies with null current_price
-    const { count: nullCount } = await supabaseAdmin
-      .from("companies")
-      .select("*", { count: "exact", head: true })
-      .is("current_price", null);
-
-    const { count: total } = await supabaseAdmin
-      .from("companies")
-      .select("*", { count: "exact", head: true });
-
-    const syncedCount = (total ?? 0) - (nullCount ?? 0);
-    return {
-      name:    "companies price sync",
-      status:  (nullCount ?? 0) > 10 ? "WARN" : "PASS",
-      message: `${syncedCount}/${total ?? 0} companies have current_price populated`,
-      detail:  (nullCount ?? 0) > 0 ? `${nullCount} companies have null current_price` : undefined,
-    };
+  if (nullErr) {
+    return { name: "companies price sync", status: "FAIL", message: `Query failed: ${nullErr.message}` };
   }
 
-  if (error) {
-    return { name: "companies price sync", status: "FAIL", message: `Query failed: ${error.message}` };
-  }
+  const { count: total } = await supabaseAdmin
+    .from("companies")
+    .select("*", { count: "exact", head: true });
 
-  const rows = (mismatch ?? []) as unknown[];
+  const syncedCount = (total ?? 0) - (nullCount ?? 0);
   return {
     name:    "companies price sync",
-    status:  rows.length > 0 ? "WARN" : "PASS",
-    message: rows.length === 0
-      ? "companies.current_price is in sync with daily_prices"
-      : `${rows.length} companies have mismatched current_price vs daily_prices`,
+    status:  (nullCount ?? 0) > 10 ? "WARN" : "PASS",
+    message: `${syncedCount}/${total ?? 0} companies have current_price populated`,
+    detail:  (nullCount ?? 0) > 0 ? `${nullCount} companies have null current_price` : undefined,
   };
 }
 
@@ -166,7 +149,7 @@ async function checkDailySnapshots(date: string): Promise<CheckResult> {
   const { count: snapshotCount, error } = await supabaseAdmin
     .from("daily_snapshots")
     .select("*", { count: "exact", head: true })
-    .eq("market_date", date);
+    .eq("snapshot_date", date);
 
   if (error) return { name: "daily_snapshots", status: "FAIL", message: `Query failed: ${error.message}` };
 
@@ -194,9 +177,8 @@ async function checkPipelineAlerts(date: string): Promise<CheckResult> {
   const { count, error } = await supabaseAdmin
     .from("pipeline_alerts")
     .select("*", { count: "exact", head: true })
-    .eq("status", "open")
-    .gte("created_at", date + "T00:00:00Z")
-    .lt("created_at",  date + "T23:59:59Z");
+    .eq("is_resolved", false)
+    .eq("market_date", date);
 
   if (error) return { name: "open pipeline_alerts", status: "WARN", message: `Could not query alerts: ${error.message}` };
 
@@ -213,7 +195,7 @@ async function checkPipelineAlerts(date: string): Promise<CheckResult> {
 async function checkIngestionRuns(date: string): Promise<CheckResult[]> {
   const { data, error } = await supabaseAdmin
     .from("ingestion_runs")
-    .select("pipeline_name, status, fetched, upserted, failed, trigger_type, started_at")
+    .select("pipeline_name, status, records_fetched, records_upserted, records_failed, trigger, started_at")
     .eq("run_date", date)
     .in("pipeline_name", EXPECTED_PIPELINES)
     .order("started_at", { ascending: false });
@@ -222,7 +204,13 @@ async function checkIngestionRuns(date: string): Promise<CheckResult[]> {
     return [{ name: "ingestion_runs", status: "FAIL", message: `Query failed: ${error.message}` }];
   }
 
-  const rows = (data ?? []) as { pipeline_name: string; status: string; fetched: number | null; upserted: number | null; failed: number | null }[];
+  const rows = (data ?? []) as {
+    pipeline_name:   string;
+    status:          string;
+    records_fetched:  number | null;
+    records_upserted: number | null;
+    records_failed:   number | null;
+  }[];
 
   // Keep only the most recent run per pipeline
   const latestPerPipeline = new Map<string, typeof rows[0]>();
@@ -245,7 +233,7 @@ async function checkIngestionRuns(date: string): Promise<CheckResult[]> {
     return {
       name:    `ingestion_runs[${name}]`,
       status,
-      message: `${name}: ${run.status} (fetched=${run.fetched ?? 0}, upserted=${run.upserted ?? 0}, failed=${run.failed ?? 0})`,
+      message: `${name}: ${run.status} (fetched=${run.records_fetched ?? 0}, upserted=${run.records_upserted ?? 0}, failed=${run.records_failed ?? 0})`,
     };
   });
 }

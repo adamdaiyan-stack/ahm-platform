@@ -462,7 +462,7 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
                 )}
               </div>
               <Link
-                href={SECTOR_SLUG[company.sector] ? "/sectors/" + SECTOR_SLUG[company.sector] : "/stocks?sector=" + encodeURIComponent(company.sector)}
+                href={SECTOR_SLUG[company.sector] ? "/sectors/" + SECTOR_SLUG[company.sector] : "/stocks?sector=" + encodeURIComponent(company.sector ?? "")}
                 className="text-xs font-mono text-tx-secondary hover:text-tx-primary transition-colors">
                 {SECTOR_SLUG[company.sector] ? "View sector module →" : "View all " + company.sector + " stocks →"}
               </Link>
@@ -510,6 +510,8 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
   );
 }
 
+// ── Helper components ─────────────────────────────────────────────────────────
+
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return <p className="text-xs font-mono text-tx-disabled uppercase tracking-widest mb-3">{children}</p>;
 }
@@ -522,6 +524,7 @@ function MetaItem({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
 function RatioItem({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
   return (
     <div className="border border-border-theme rounded-lg p-3 text-center">
@@ -536,7 +539,7 @@ function RatioItem({ label, value, muted }: { label: string; value: string; mute
  * Key Risks, and Catalysts sections in the generic stock page shell.
  *
  * Renders the same layout skeleton that CompanyIntelligencePage uses for these
- * sections, so the page structure is consistent across all 90 companies.
+ * sections, so the page structure is consistent across all 90+ companies.
  * When analyst coverage is added (via COMPANY_CONFIGS or DB intelligence),
  * the page automatically routes to CompanyIntelligencePage instead.
  */
@@ -565,4 +568,3 @@ function PendingSection({ title, description, items }: {
     </div>
   );
 }
-   
