@@ -270,9 +270,43 @@ async function main(): Promise<void> {
         if (error) {
           console.error(`  Index upsert error: ${error.message}`);
         } else {
-          console.log(`  ✓ ${idx.index_symbol}: ${idx.close} (${idx.change_percent?.toFixed(2)}%)\n`);
+          console.log(`  ✓ ${idx.index_symbol}: ${idx.close} (${idx.change_percent?.toFixed(2)}%)`);
         }
       }
+      console.log();
+
+      // Update the market_index snapshot (one row per index — overwritten daily)
+      console.log("Updating market_index snapshot...");
+      const kse100 = indices.find((r) => r.index_symbol === "KSE-100");
+      if (kse100) {
+        const { error: miErr } = await supabaseAdmin
+          .from("market_index")
+          .update({
+            level:          kse100.close,
+            change:         kse100.change,
+            change_percent: kse100.change_percent,
+            updated_at:     new Date().toISOString(),
+          })
+          .eq("index_name", "KSE-100");
+
+        if (miErr) {
+          console.warn(`  market_index update error: ${miErr.message}`);
+        } else {
+          console.log(`  ✓ market_index KSE-100 → ${kse100.close}\n`);
+        }
+      }
+    }
+
+    // ── Step 5b: Compute market breadth ─────────────────────────────────────
+    // Calls the SQL function that counts advances/declines/unchanged for the
+    // run date and writes the result back into index_history + market_index.
+    console.log("Computing market breadth...");
+    const { error: breadthErr } = await supabaseAdmin
+      .rpc("compute_market_breadth", { p_date: runDate });
+    if (breadthErr) {
+      console.warn(`  compute_market_breadth error: ${breadthErr.message}`);
+    } else {
+      console.log(`  ✓ Market breadth computed for ${runDate}\n`);
     }
 
     // ── Step 6: Write data quality flags ────────────────────────────────────

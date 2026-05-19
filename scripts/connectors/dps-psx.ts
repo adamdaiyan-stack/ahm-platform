@@ -83,10 +83,13 @@ const ENDPOINTS = {
   securities: `${BASE_URL}/market-watch`,
 
   /**
-   * Market summary — index level and breadth data.
-   * Contains: KSE-100 level, change, volume, advances/declines.
+   * PSX indices page — all index snapshots in a table.
+   * Contains: KSE-100 (and other indices) with High, Low, Current, Change, % Change.
+   *
+   * NOTE: /market-summary returns 404. The correct endpoint is /indices.
+   * Table columns: [0] Index | [1] High | [2] Low | [3] Current | [4] Change | [5] % Change
    */
-  marketSummary: `${BASE_URL}/market-summary`,
+  indices: `${BASE_URL}/indices`,
 } as const;
 
 // ─── HTTP Fetch helpers ───────────────────────────────────────────────────────
@@ -275,64 +278,82 @@ function parseSecuritiesHTML(
 }
 
 /**
- * parseMarketSummaryHTML: Extracts KSE-100 index data from the market summary page.
+ * parseIndicesHTML: Parses the PSX /indices page into index records.
  *
- * PSX market summary typically shows:
- *   - KSE-100 index level, change, % change
- *   - Volume, advances, declines, unchanged
+ * Page URL: https://dps.psx.com.pk/indices
+ * Table columns (confirmed May 2026):
+ *   [0] Index name (e.g. "KSE100")
+ *   [1] High
+ *   [2] Low
+ *   [3] Current  (today's close)
+ *   [4] Change
+ *   [5] % Change
+ *
+ * The page also shows a timestamp: "As of May 8, 2026 4:50 PM"
+ * We use the caller-supplied marketDate rather than parsing this timestamp.
+ *
+ * Index name mapping (PSX label → our canonical index_name):
+ *   KSE100 → KSE-100
+ *   KSE30  → KSE-30
  */
-function parseMarketSummaryHTML(
+const INDEX_NAME_MAP: Record<string, string> = {
+  KSE100: "KSE-100",
+  KSE30:  "KSE-30",
+  KMIALLSHR: "KMI-All-Share",
+  KMI30:  "KMI-30",
+};
+
+function parseIndicesHTML(
   html: string,
   marketDate: string
-): NormalizedIndexRecord | null {
-  // Try to find KSE-100 level using common patterns
-  // Pattern: a number in the range 70,000 – 200,000 (current realistic range)
-  const ksePatterns = [
-    /KSE[- ]?100[^>]*?>[\s\S]*?(\d{2,3},\d{3}(?:\.\d+)?)/i,
-    /index[^>]*?>[\s\S]*?(\d{2,3},\d{3}(?:\.\d+)?)/i,
-  ];
+): NormalizedIndexRecord[] {
+  const rows = extractTableRows(html, "KSE");
 
-  let close: number | null = null;
-  for (const pattern of ksePatterns) {
-    const match = html.match(pattern);
-    if (match) {
-      close = parseNumber(match[1]);
-      if (close && close > 50_000) break; // Sanity check: KSE-100 > 50,000
-    }
+  if (rows.length === 0) {
+    console.warn(
+      "[dps-psx] No index rows found on /indices page. " +
+      "PSX may have changed the page structure."
+    );
+    return [];
   }
 
-  if (!close) {
-    console.warn("[dps-psx] Could not parse KSE-100 index level from market summary.");
-    return null;
+  const records: NormalizedIndexRecord[] = [];
+
+  for (const cells of rows) {
+    if (cells.length < 4) continue;
+
+    const rawName = cells[0]?.trim().toUpperCase().replace(/\s+/g, "");
+    if (!rawName) continue;
+
+    // Map PSX label to our canonical name; keep raw name if not in map
+    const indexName = INDEX_NAME_MAP[rawName] ?? rawName;
+
+    const high      = parseNumber(cells[1]);
+    const low       = parseNumber(cells[2]);
+    const close     = parseNumber(cells[3]);
+    const change    = parseNumber(cells[4]);
+    const changePct = parseNumber(cells[5]);
+
+    if (close == null || close <= 0) continue;
+
+    records.push({
+      index_symbol:   indexName,
+      market_date:    marketDate,
+      open:           null,        // /indices page does not expose open
+      high,
+      low,
+      close,
+      change,
+      change_percent: changePct,
+      volume:         null,        // volume not on this page; computed separately
+      advances:       null,        // computed by compute_market_breadth() SQL function
+      declines:       null,
+      unchanged:      null,
+      source:         "dps_psx",
+    });
   }
 
-  // Look for change and change%
-  const changeMatch = html.match(/change[^>]*?>[\s\S]*?([-+]?\d+(?:,\d+)*(?:\.\d+)?)/i);
-  const change = changeMatch ? parseNumber(changeMatch[1]) : null;
-  const changePctMatch = html.match(/(\-?\d+\.\d+)%/);
-  const changePct = changePctMatch ? parseNumber(changePctMatch[1]) : null;
-
-  // Look for advances/declines
-  const advancesMatch = html.match(/advance[^>]*?>[\s\S]*?(\d+)/i);
-  const declinesMatch = html.match(/decline[^>]*?>[\s\S]*?(\d+)/i);
-  const advances = advancesMatch ? parseInt(advancesMatch[1]) : null;
-  const declines = declinesMatch ? parseInt(declinesMatch[1]) : null;
-
-  return {
-    index_symbol:   "KSE-100",
-    market_date:    marketDate,
-    open:           null,
-    high:           null,
-    low:            null,
-    close,
-    change,
-    change_percent: changePct,
-    volume:         null,
-    advances,
-    declines,
-    unchanged:      null,
-    source:         "dps_psx",
-  };
+  return records;
 }
 
 // ─── Main Connector Class ─────────────────────────────────────────────────────
@@ -345,9 +366,9 @@ export class DPSPSXConnector {
   static async fetch(marketDate: string): Promise<FetchResult> {
     console.log(`[dps-psx] Fetching data for ${marketDate}...`);
 
-    const [securitiesHtml, summaryHtml] = await Promise.allSettled([
+    const [securitiesHtml, indicesHtml] = await Promise.allSettled([
       fetchWithTimeout(ENDPOINTS.securities),
-      fetchWithTimeout(ENDPOINTS.marketSummary),
+      fetchWithTimeout(ENDPOINTS.indices),
     ]);
 
     // Securities (required)
@@ -360,16 +381,18 @@ export class DPSPSXConnector {
     const prices = parseSecuritiesHTML(securitiesHtml.value, marketDate);
     console.log(`[dps-psx] Parsed ${prices.length} security records`);
 
-    // Index (non-blocking — log warning if unavailable)
+    // Indices (non-blocking — log warning if unavailable)
     const indices: NormalizedIndexRecord[] = [];
-    if (summaryHtml.status === "fulfilled") {
-      const indexRecord = parseMarketSummaryHTML(summaryHtml.value, marketDate);
-      if (indexRecord) {
-        indices.push(indexRecord);
-        console.log(`[dps-psx] Parsed index: KSE-100 = ${indexRecord.close}`);
+    if (indicesHtml.status === "fulfilled") {
+      const indexRecords = parseIndicesHTML(indicesHtml.value, marketDate);
+      indices.push(...indexRecords);
+      const kse100 = indexRecords.find((r) => r.index_symbol === "KSE-100");
+      if (kse100) {
+        console.log(`[dps-psx] Parsed KSE-100: ${kse100.close} (${kse100.change_percent?.toFixed(2) ?? "?"}%)`);
       }
+      console.log(`[dps-psx] Parsed ${indexRecords.length} index record(s)`);
     } else {
-      console.warn(`[dps-psx] Market summary unavailable: ${summaryHtml.reason}`);
+      console.warn(`[dps-psx] Indices page unavailable: ${indicesHtml.reason}`);
     }
 
     return {
