@@ -35,6 +35,39 @@ import { parseDateArg, isWeekend }                 from "../utils/date-utils.js"
 const PIPELINE_NAME = "daily_prices";
 const SOURCE        = "dps_psx";
 
+// ─── PSX Symbol Normalisation ─────────────────────────────────────────────────
+//
+// PSX appends trading suffixes to symbols on certain days:
+//   XD  — ex-dividend       (e.g. BAFLXD  → BAFL)
+//   XB  — ex-bonus          (e.g. HBLXB   → HBL)
+//   XR  — ex-rights         (e.g. UCLXR   → UCL)
+//   XN  — ex-rights new     (e.g. ENGXN   → ENG)
+//   NC  — odd-lot / no cert (e.g. AMTEXNC → AMTEX)
+//   IM  — interim / rights  (e.g. MCBIM   → MCB)
+//   FUT — futures contract  (stripped entirely)
+//
+// This does NOT affect symbols whose base name legitimately ends with
+// these letters — we only strip when the stripped version is in the
+// companies master (see normalizePSXSymbol below).
+
+const PSX_SUFFIXES = ["XD", "XB", "XR", "XN", "NC", "IM", "FUT"] as const;
+
+/**
+ * Strips a known PSX trading suffix from a symbol if the resulting
+ * base symbol exists in the companies master. Falls back to the
+ * original symbol if no match is found.
+ */
+function normalizePSXSymbol(raw: string, knownSymbols: Set<string>): string {
+  if (knownSymbols.has(raw)) return raw; // already a clean match
+  for (const suffix of PSX_SUFFIXES) {
+    if (raw.endsWith(suffix)) {
+      const base = raw.slice(0, -suffix.length);
+      if (base.length > 0 && knownSymbols.has(base)) return base;
+    }
+  }
+  return raw; // no match — keep original, will be flagged as missing
+}
+
 /** Upsert in batches to avoid hitting Supabase request size limits */
 const BATCH_SIZE = 50;
 
@@ -172,6 +205,13 @@ async function main(): Promise<void> {
     const allIssues:      DataIssue[]             = [];
 
     for (const record of rawPrices) {
+      // Normalise PSX trading suffixes (XD, XB, XR, NC, IM, FUT, etc.)
+      const normalizedSymbol = normalizePSXSymbol(record.symbol, knownSymbols);
+      if (normalizedSymbol !== record.symbol) {
+        // Mutate the record in-place — downstream code uses record.symbol
+        (record as { symbol: string }).symbol = normalizedSymbol;
+      }
+
       // Check symbol is in master
       if (!knownSymbols.has(record.symbol)) {
         allIssues.push(missingSymbolFlag(record.symbol, SOURCE));
