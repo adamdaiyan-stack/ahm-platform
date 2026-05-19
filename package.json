@@ -7,13 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-
-    "ingest:prices":         "tsx --env-file=.env.local scripts/pipelines/ingest-daily-prices.ts",
-    "sync:snapshots":        "tsx --env-file=.env.local scripts/pipelines/sync-company-snapshots.ts",
+    "ingest:prices": "tsx --env-file=.env.local scripts/pipelines/ingest-daily-prices.ts",
+    "sync:snapshots": "tsx --env-file=.env.local scripts/pipelines/sync-company-snapshots.ts",
     "build:daily-snapshots": "tsx --env-file=.env.local scripts/pipelines/build-daily-snapshots.ts",
-    "pipeline:all":          "npm run ingest:prices && npm run sync:snapshots && npm run build:daily-snapshots",
-
-    "debug:connector":       "tsx --env-file=.env.local scripts/connectors/dps-psx.ts"
+    "pipeline:all": "npm run ingest:prices && npm run sync:snapshots && npm run build:daily-snapshots",
+    "debug:connector": "tsx --env-file=.env.local scripts/connectors/dps-psx.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",

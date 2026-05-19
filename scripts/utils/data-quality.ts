@@ -10,7 +10,8 @@
  *   }
  */
 
-import { supabaseAdmin } from "./supabase-admin.js";
+import { supabaseAdmin }        from "./supabase-admin.js";
+import type { NormalizedPriceRecord } from "../connectors/dps-psx.js";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -51,27 +52,19 @@ export interface DataIssue {
 const MAX_PRICE_MOVE_PCT = 35;
 const MIN_PRICE = 0.01;
 
-export interface RawPriceRecord {
-  symbol:        string;
-  marketDate:    string;
-  open?:         number | null;
-  high?:         number | null;
-  low?:          number | null;
-  close:         number;
-  volume?:       number | null;
-  changePct?:    number | null;
-}
+// NormalizedPriceRecord is the canonical type — imported from the connector.
+// One definition, one source of truth.
 
 export function validateDailyPrice(
-  record: RawPriceRecord,
+  record: NormalizedPriceRecord,
   prevClose: number | null
 ): DataIssue[] {
   const issues: DataIssue[] = [];
   const base = {
     entityType: "daily_price",
-    entityId:   `${record.symbol}:${record.marketDate}`,
+    entityId:   `${record.symbol}:${record.market_date}`,
     symbol:     record.symbol,
-    marketDate: record.marketDate,
+    marketDate: record.market_date,
     source:     "dps_psx",
     rawValue:   record,
   };
@@ -145,13 +138,13 @@ export function validateDailyPrice(
 
   // Future date
   const today = new Date().toISOString().slice(0, 10);
-  if (record.marketDate > today) {
+  if (record.market_date > today) {
     issues.push({
       ...base,
       fieldName:   "market_date",
       issueType:   "suspicious_value",
       severity:    "warning",
-      description: `Market date ${record.marketDate} is in the future (today: ${today}).`,
+      description: `Market date ${record.market_date} is in the future (today: ${today}).`,
     });
   }
 
