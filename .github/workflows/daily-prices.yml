@@ -88,16 +88,29 @@ jobs:
             ${{ steps.force.outputs.force_arg }} \
             --manual
 
-      # ── Step 2: Sync company snapshots ─────────────────────────────────
+      # ── Step 2: Ingest KSE-100 index (separate fetch to avoid rate-limits) ──
+      - name: Ingest KSE index data
+        run: |
+          npx tsx scripts/pipelines/ingest-kse-index.ts \
+            ${{ steps.date.outputs.date_arg }} \
+            ${{ steps.force.outputs.force_arg }}
+
+      # ── Step 3: Sync company snapshots ─────────────────────────────────
       - name: Sync company snapshot fields
         run: |
           npx tsx scripts/pipelines/sync-company-snapshots.ts \
             ${{ steps.date.outputs.date_arg }}
 
-      # ── Step 3: Build daily snapshots (AI context) ─────────────────────
+      # ── Step 4: Build daily snapshots (AI context) ─────────────────────
       - name: Build daily intelligence snapshots
         run: |
           npx tsx scripts/pipelines/build-daily-snapshots.ts \
+            ${{ steps.date.outputs.date_arg }}
+
+      # ── Step 5: Reconcile — detect missing / stale prices ──────────────
+      - name: Reconcile daily prices
+        run: |
+          npx tsx scripts/pipelines/reconcile-daily-prices.ts \
             ${{ steps.date.outputs.date_arg }}
 
       # ── Summary ────────────────────────────────────────────────────────
