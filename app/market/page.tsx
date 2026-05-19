@@ -1,3 +1,5 @@
+export const revalidate = 300; // re-render every 5 minutes
+
 // app/market/page.tsx
 //
 // Market Intelligence Dashboard — transformed from basic data shell to

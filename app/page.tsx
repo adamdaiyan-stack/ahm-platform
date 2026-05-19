@@ -1,3 +1,5 @@
+export const revalidate = 300; // re-render every 5 minutes
+
 import Link from "next/link";
 import { getKSE100Index, getTopGainers, getTopLosers } from "@/services/api/market";
 import { formatPercent, formatVolume, formatPrice } from "@/lib/formatters";
