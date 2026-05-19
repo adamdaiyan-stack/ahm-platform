@@ -80,7 +80,11 @@ export function validateDailyPrice(
     });
   }
 
-  // OHLC integrity
+  // OHLC integrity — skip for suspended/zero-volume stocks.
+  // When volume = 0 the exchange reports open=high=low=close (all identical),
+  // which triggers spurious OHLC violations. These are not data errors.
+  if (record.volume === 0) return issues;
+
   if (record.high != null && record.low != null) {
     if (record.high < record.low) {
       issues.push({

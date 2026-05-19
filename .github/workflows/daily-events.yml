@@ -1,0 +1,122 @@
+# ============================================================
+# AHM Platform — Daily Events Pipeline
+# Runs Mon–Fri at 6:00 PM PKT (13:00 UTC) — 30 min after PSX
+# typically publishes EOD announcements.
+#
+# Pipeline steps:
+#   1. Ingest announcements from DPS PSX → announcements_raw
+#   2. Normalize corporate actions → corporate_actions
+#
+# Secrets required (same as daily-prices.yml):
+#   SUPABASE_URL              → Your Supabase project URL
+#   SUPABASE_SERVICE_ROLE_KEY → Service role key (NOT the anon key)
+#
+# Manual trigger:
+#   GitHub → Actions → Daily Events Pipeline → Run workflow
+#   Optionally pass a specific date to backfill: --date=2026-05-15
+# ============================================================
+
+name: Daily Events Pipeline
+
+on:
+  schedule:
+    # 13:00 UTC = 6:00 PM PKT (Pakistan Standard Time, UTC+5)
+    # Runs Mon–Fri only
+    - cron: "0 13 * * 1-5"
+
+  # Allow manual trigger from GitHub Actions UI
+  workflow_dispatch:
+    inputs:
+      run_date:
+        description: "Date to ingest (YYYY-MM-DD). Leave blank for today."
+        required: false
+        default: ""
+      force:
+        description: "Force run even on weekends (for backfill)"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+jobs:
+  events:
+    name: Ingest PSX Events & Announcements
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      SUPABASE_URL:              ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NODE_ENV:                  production
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      # ── Build date argument ─────────────────────────────────────────────
+      - name: Resolve run date
+        id: date
+        run: |
+          if [ -n "${{ github.event.inputs.run_date }}" ]; then
+            echo "date_arg=--date=${{ github.event.inputs.run_date }}" >> $GITHUB_OUTPUT
+          else
+            echo "date_arg=" >> $GITHUB_OUTPUT
+          fi
+
+      # ── Build force flag ────────────────────────────────────────────────
+      - name: Resolve force flag
+        id: force
+        run: |
+          if [ "${{ github.event.inputs.force }}" = "true" ]; then
+            echo "force_arg=--force" >> $GITHUB_OUTPUT
+          else
+            echo "force_arg=" >> $GITHUB_OUTPUT
+          fi
+
+      # ── Step 1: Ingest announcements ────────────────────────────────────
+      - name: Ingest PSX announcements
+        run: |
+          npx tsx scripts/pipelines/ingest-announcements.ts \
+            ${{ steps.date.outputs.date_arg }} \
+            ${{ steps.force.outputs.force_arg }} \
+            --manual
+
+      # ── Step 2: Normalize corporate actions ─────────────────────────────
+      - name: Normalize corporate actions
+        run: |
+          npx tsx scripts/pipelines/normalize-corporate-actions.ts \
+            ${{ steps.date.outputs.date_arg }}
+
+      # ── Summary ────────────────────────────────────────────────────────
+      - name: Pipeline complete
+        run: |
+          echo "✅ AHM events pipeline completed successfully"
+          echo "Check ingestion_runs in Supabase for detailed results."
+
+  # ── Failure notification (optional — add Slack webhook to enable) ──────────
+  # notify-on-failure:
+  #   name: Notify on failure
+  #   needs: events
+  #   if: failure()
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Send Slack alert
+  #       uses: slackapi/slack-github-action@v1
+  #       with:
+  #         payload: |
+  #           {
+  #             "text": "❌ AHM events pipeline failed on ${{ github.run_id }}. Check Actions: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+  #           }
+  #       env:
+  #         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
