@@ -179,7 +179,7 @@ function invertedMinMaxNormalize(value: number, min: number, max: number): numbe
 }
 
 function percentileToScore(percentileRank: number | null, invert = false): number {
-  if (percentileRank === null) return 50;
+  if (percentileRank === null || isNaN(percentileRank)) return 50;
   const pct = Math.max(0, Math.min(100, percentileRank));
   return invert ? clamp(100 - pct) : clamp(pct);
 }

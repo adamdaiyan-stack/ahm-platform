@@ -376,6 +376,7 @@ function computePercentile(peers: any[], targetSymbol: string, field: string, hi
   if (defined.length === 0) return null;
   const target = defined.find((p: any) => p.symbol === targetSymbol);
   if (!target) return null;
+  if (defined.length === 1) return 50; // sole data point — no meaningful percentile
   const sorted = [...defined].sort((a: any, b: any) => a[field] - b[field]);
   const idx = sorted.findIndex((p: any) => p.symbol === targetSymbol);
   const pct = higherIsBetter
