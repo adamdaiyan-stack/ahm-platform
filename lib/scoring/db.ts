@@ -462,19 +462,3 @@ function nullRanks(sectorSize: number): SectorPercentileRanks {
     sector_size:     sectorSize,
   };
 }
-    .returns<{ symbol: string }[]>();
-
-  return (data ?? []).map(r => r.symbol);
-}
-
-function nullRanks(sectorSize: number): SectorPercentileRanks {
-  return {
-    pe_rank:         null,
-    pb_rank:         null,
-    roe_rank:        null,
-    net_margin_rank: null,
-    eps_growth_rank: null,
-    debt_eq_rank:    null,
-    sector_size:     sectorSize,
-  };
-}
