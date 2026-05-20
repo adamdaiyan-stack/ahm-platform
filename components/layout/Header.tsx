@@ -6,11 +6,12 @@ import { useEffect, useState } from "react";
 import AHMLogo from "@/components/ui/AHMLogo";
 
 const NAV = [
-  { href: "/market",   label: "Market"   },
-  { href: "/stocks",   label: "Stocks"   },
-  { href: "/sectors",  label: "Sectors"  },
-  { href: "/research", label: "Research" },
-  { href: "/learn",    label: "Learn"    },
+  { href: "/market",       label: "Market"       },
+  { href: "/stocks",       label: "Stocks"       },
+  { href: "/sectors",      label: "Sectors"      },
+  { href: "/intelligence", label: "Intelligence" },
+  { href: "/research",     label: "Research"     },
+  { href: "/learn",        label: "Learn"        },
 ];
 
 // Brand green: dark theme vs light theme

@@ -169,3 +169,47 @@ export async function getSectorIntelligencePackage(
   ]);
   return { sector, drivers, blocks };
 }
+
+// ---- Conviction Board -------------------------------------------------------
+
+export type ConvictionBoardRow = {
+  symbol:          string;
+  company_name:    string;
+  sector:          string;
+  score:           number;
+  tier:            'HIGH_CONVICTION' | 'MODERATE' | 'WATCHLIST' | 'MONITOR';
+  tier_order:      number;
+  data_confidence: number;
+  sub_scores:      Record<string, { score: number; confidence: number }>;
+  scored_at:       string;
+  score_version:   string;
+};
+
+/**
+ * All current conviction scores, ordered by score descending.
+ * Reads from the conviction_board VIEW (conviction_scores JOIN companies WHERE is_current).
+ */
+export async function getConvictionBoard(): Promise<ConvictionBoardRow[]> {
+  const { data, error } = await supabase
+    .from('conviction_board')
+    .select('symbol,company_name,sector,score,tier,tier_order,data_confidence,sub_scores,scored_at,score_version');
+  if (error) { console.error('[intelligence] getConvictionBoard:', error.message); return []; }
+  return (data ?? []) as ConvictionBoardRow[];
+}
+
+/**
+ * Conviction score for a single symbol (current only).
+ * Returns null if the company has not been scored yet.
+ */
+export async function getConvictionScore(symbol: string): Promise<ConvictionBoardRow | null> {
+  const { data, error } = await supabase
+    .from('conviction_board')
+    .select('symbol,company_name,sector,score,tier,tier_order,data_confidence,sub_scores,scored_at,score_version')
+    .eq('symbol', symbol.toUpperCase())
+    .single();
+  if (error) {
+    if (error.code !== 'PGRST116') console.error('[intelligence] getConvictionScore:', error.message);
+    return null;
+  }
+  return data as ConvictionBoardRow;
+}

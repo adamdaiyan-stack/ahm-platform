@@ -17,3 +17,12 @@
 -- If running individually, apply in the numbered order above.
 -- This file is a reference index — run individual files in Supabase.
 -- ============================================================
+
+--   023 — conviction_scores + conviction_score_history
+--   024 — ai_outputs + ai_prompt_templates
+--   025 — ai_market_snapshots + ai_event_triggers + alerts
+--   026 — ai_generation_jobs + ai_quality_checks
+--   027 — seed ai_prompt_templates v1.0.0
+--   028 — sector_macro_drivers table (Sprint 6 Week 4)
+--   029 — seed sector_macro_drivers for all 7 sectors (Sprint 6 Week 4)
+

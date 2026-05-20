@@ -571,3 +571,250 @@ export type CompanyIntelBlock = {
   created_at:      string;
   updated_at:      string;
 };
+
+// ─── AI Intelligence Infrastructure (Sprint 6) ───────────────────────────────
+// Schema version: Sprint 6 — AI Intelligence Infrastructure Phase 1
+
+// ── Conviction Scoring ────────────────────────────────────────────────────────
+
+export type ConvictionTier =
+  | 'HIGH_CONVICTION'
+  | 'MODERATE'
+  | 'WATCHLIST'
+  | 'MONITOR';
+
+export type SubScoreBreakdown = {
+  valuation:               number;
+  profitability:           number;
+  growth:                  number;
+  balance_sheet:           number;
+  momentum:                number;
+  macro_sensitivity:       number;
+  catalyst:                number;
+  risk:                    number;
+  sector_relative_strength: number;
+  technical_timing:        number;
+  data_confidence_multiplier: number;
+};
+
+export type ScoringWeights = {
+  phase:                    string;   // 'phase_1' | 'phase_2'
+  valuation:                number;
+  profitability:             number;
+  growth:                    number;
+  balance_sheet:             number;
+  momentum:                  number;
+  macro_sensitivity:         number;
+  catalyst:                  number;
+  risk:                      number;
+  sector_relative_strength:  number;
+  technical_timing:          number;
+};
+
+export type ConvictionScore = {
+  id:               number;
+  symbol:           string;
+  score:            number;            // 0–100 composite
+  tier:             ConvictionTier;
+  sub_scores:       SubScoreBreakdown;
+  weights_applied:  ScoringWeights;
+  data_confidence:  number;            // 0.65–1.00
+  inputs_snapshot:  Record<string, unknown>;
+  score_version:    string;            // e.g. '1.0.0'
+  is_current:       boolean;
+  scored_at:        string;
+  created_at:       string;
+};
+
+export type ConvictionScoreHistory = {
+  id:               number;
+  symbol:           string;
+  score:            number;
+  tier:             ConvictionTier;
+  previous_score:   number | null;
+  previous_tier:    ConvictionTier | null;
+  tier_changed:     boolean;
+  tier_direction:   'upgrade' | 'downgrade' | null;
+  sub_scores:       SubScoreBreakdown;
+  data_confidence:  number;
+  inputs_snapshot:  Record<string, unknown>;
+  score_version:    string;
+  scored_at:        string;
+  trigger_reason:   'scheduled' | 'block_update' | 'metrics_update' | 'manual';
+};
+
+// Conviction board row (from conviction_board view)
+export type ConvictionBoardRow = {
+  symbol:          string;
+  company_name:    string;
+  sector:          string;
+  score:           number;
+  tier:            ConvictionTier;
+  tier_order:      number;
+  data_confidence: number;
+  sub_scores:      SubScoreBreakdown;
+  scored_at:       string;
+  score_version:   string;
+};
+
+// ── AI Outputs ────────────────────────────────────────────────────────────────
+
+export type AIOutputType =
+  | 'company_narrative'
+  | 'conviction_interpretation'
+  | 'risk_summary'
+  | 'catalyst_summary'
+  | 'peer_comparison'
+  | 'sector_brief'
+  | 'market_summary'
+  | 'alert_summary';
+
+export type AIOutput = {
+  id:                   string;   // uuid
+  output_type:          AIOutputType;
+  reference_key:        string;
+  raw_text:             string;
+  content:              Record<string, unknown>;
+  model_version:        string;
+  prompt_version:       string;
+  prompt_hash:          string;
+  input_hash:           string;
+  input_snapshot:       Record<string, unknown>;
+  prompt_tokens:        number | null;
+  completion_tokens:    number | null;
+  total_tokens:         number | null;
+  generation_ms:        number | null;
+  is_current:           boolean;
+  valid_until:          string | null;
+  invalidated_at:       string | null;
+  invalidation_reason:  string | null;
+  created_at:           string;
+};
+
+export type AIPromptTemplate = {
+  id:             string;   // uuid
+  prompt_type:    AIOutputType;
+  version:        string;
+  system_prompt:  string;
+  user_template:  string;
+  variables:      string[];
+  model_target:   string;
+  max_tokens:     number;
+  temperature:    number;
+  is_active:      boolean;
+  change_notes:   string | null;
+  created_at:     string;
+  deprecated_at:  string | null;
+};
+
+// ── Market Snapshots ──────────────────────────────────────────────────────────
+
+export type SnapshotType = 'pre_market' | 'market_open' | 'market_close' | 'eod_summary';
+export type SnapshotFormat = 'long' | 'short';
+
+export type AIMarketSnapshot = {
+  id:                 string;   // uuid
+  snapshot_date:      string;
+  snapshot_type:      SnapshotType;
+  format:             SnapshotFormat;
+  raw_text:           string;
+  structured_content: Record<string, unknown>;
+  input_snapshot:     Record<string, unknown>;
+  model_version:      string;
+  prompt_version:     string;
+  prompt_tokens:      number | null;
+  completion_tokens:  number | null;
+  total_tokens:       number | null;
+  generation_ms:      number | null;
+  is_current:         boolean;
+  generated_at:       string;
+};
+
+// ── Event Triggers and Alerts ─────────────────────────────────────────────────
+
+export type EventTriggerStatus = 'pending' | 'processing' | 'complete' | 'suppressed' | 'failed';
+
+export type AIEventTrigger = {
+  id:                      string;   // uuid
+  event_type:              string;
+  reference_key:           string;
+  event_data:              Record<string, unknown>;
+  priority:                number;
+  status:                  EventTriggerStatus;
+  suppression_reason:      string | null;
+  alert_id:                string | null;
+  ai_output_id:            string | null;
+  triggered_at:            string;
+  processing_started_at:   string | null;
+  processed_at:            string | null;
+  error_message:           string | null;
+  retry_count:             number;
+};
+
+export type AlertSeverity  = 'critical' | 'high' | 'medium' | 'low';
+export type AlertAudience  = 'internal' | 'retail' | 'institutional' | 'all';
+
+export type Alert = {
+  id:                string;   // uuid
+  alert_type:        string;
+  reference_key:     string;
+  title:             string;
+  body:              string;
+  severity:          AlertSeverity;
+  audience:          AlertAudience;
+  event_trigger_id:  string | null;
+  ai_output_id:      string | null;
+  triggered_at:      string;
+  expires_at:        string | null;
+  is_read:           boolean;
+  is_active:         boolean;
+  created_at:        string;
+};
+
+// ── Generation Jobs and Quality ───────────────────────────────────────────────
+
+export type JobStatus = 'queued' | 'processing' | 'complete' | 'failed' | 'skipped' | 'cancelled';
+
+export type AIGenerationJob = {
+  id:                 string;   // uuid
+  job_type:           AIOutputType;
+  reference_key:      string;
+  trigger_reason:     'scheduled' | 'event_triggered' | 'cache_miss' | 'cache_invalidation' | 'manual';
+  trigger_source_id:  string | null;
+  priority:           number;
+  status:             JobStatus;
+  output_id:          string | null;
+  queued_at:          string;
+  started_at:         string | null;
+  completed_at:       string | null;
+  queue_wait_ms:      number | null;
+  processing_ms:      number | null;
+  total_tokens:       number | null;
+  error_message:      string | null;
+  retry_count:        number;
+  model_version:      string | null;
+  prompt_version:     string | null;
+};
+
+export type QualityCheckStatus = 'passed' | 'warning' | 'failed';
+
+export type QualityCheckRun = {
+  check_name: string;
+  status:     QualityCheckStatus;
+  detail:     string;
+  matches?:   string[];
+};
+
+export type AIQualityCheck = {
+  id:              string;
+  output_id:       string;
+  job_id:          string | null;
+  overall_status:  QualityCheckStatus;
+  checks_run:      QualityCheckRun[];
+  violations:      Array<Record<string, unknown>>;
+  requires_review: boolean;
+  reviewed_at:     string | null;
+  reviewed_by:     string | null;
+  review_notes:    string | null;
+  checked_at:      string;
+};

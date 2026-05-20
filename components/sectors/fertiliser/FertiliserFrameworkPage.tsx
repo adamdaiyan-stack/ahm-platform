@@ -29,7 +29,8 @@
 import { getCompaniesBySymbols }           from "@/services/api/companies";
 import { getReportsBySector }              from "@/services/api/research";
 import { getSectorBySlug, getSectorDrivers } from "@/services/api/intelligence";
-import { buildSectorConfig }               from "@/lib/sector-adapter";
+import { buildSectorConfig }               from "@/lib/sector-adapter"
+import { AISectorBrief }       from '@/components/ai/AISectorBrief';
 import { FERTILISER_SYMBOLS }    from "@/constants";
 import fertiliserData            from "@/data/sectors/fertiliser";
 
@@ -210,6 +211,9 @@ export default async function FertiliserFrameworkPage() {
 
   const analyticsSlot = (
     <>
+      {/* AI Sector Brief — served from ai_outputs, silently absent if not generated */}
+      <AISectorBrief sectorSlug="fertiliser" />
+
       {/* 1 — Sector Overview */}
       <ExpandableSection
         id="overview"

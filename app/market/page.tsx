@@ -34,6 +34,8 @@ import MoversPanel              from "@/components/dashboard/MoversPanel";
 import MarketDriversPanel       from "@/components/dashboard/MarketDriversPanel";
 import SpotlightCard            from "@/components/dashboard/SpotlightCard";
 import FeaturedResearch         from "@/components/dashboard/FeaturedResearch";
+import { AIMarketSnapshot }     from "@/components/ai/AIMarketSnapshot";
+import { AlertsFeed }           from "@/components/alerts/AlertsFeed";
 
 export default async function MarketPage() {
   const status = getMarketStatus();
@@ -89,6 +91,8 @@ export default async function MarketPage() {
 
             {/* ── LEFT COLUMN (3/5) — narrative + drivers + research ── */}
             <div className="lg:col-span-3 flex flex-col gap-8">
+              {/* AI daily snapshot — silently absent until first generation */}
+              <AIMarketSnapshot snapshotType="eod_summary" />
               <MarketIntelligenceSummary />
               <MarketDriversPanel />
               <FeaturedResearch reports={reports} />
@@ -96,6 +100,8 @@ export default async function MarketPage() {
 
             {/* ── RIGHT COLUMN (2/5) — sectors + movers ─────────────── */}
             <div className="lg:col-span-2 flex flex-col gap-8">
+              {/* AI Alerts — silently absent when no active alerts */}
+              <AlertsFeed context="market" limit={8} />
               <SectorHeatPanel sectors={sectors} stats={sectorStats} />
               <MoversPanel gainers={gainers} losers={losers} />
             </div>

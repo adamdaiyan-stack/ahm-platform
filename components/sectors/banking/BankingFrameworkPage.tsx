@@ -21,7 +21,8 @@
 import { getCompaniesBySymbols } from "@/services/api/companies";
 import { getReportsBySector }    from "@/services/api/research";
 import { getSectorBySlug, getSectorDrivers } from "@/services/api/intelligence";
-import { buildSectorConfig }     from "@/lib/sector-adapter";
+import { buildSectorConfig }     from "@/lib/sector-adapter"
+import { AISectorBrief }       from '@/components/ai/AISectorBrief';
 import { BANK_SYMBOLS }          from "@/constants";
 import bankingData               from "@/data/sectors/banking";
 
@@ -169,6 +170,9 @@ export default async function BankingFrameworkPage() {
 
   const analyticsSlot = (
     <>
+      {/* AI Sector Brief — served from ai_outputs, silently absent if not generated */}
+      <AISectorBrief sectorSlug="banking" />
+
       {/* 1 — Overview & P&L Earnings Flow */}
       <ExpandableSection
         id="overview"

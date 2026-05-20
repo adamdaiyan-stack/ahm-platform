@@ -27,7 +27,8 @@
 import { getCompaniesBySymbols } from "@/services/api/companies";
 import { getReportsBySector }    from "@/services/api/research";
 import { getSectorBySlug, getSectorDrivers } from "@/services/api/intelligence";
-import { buildSectorConfig }     from "@/lib/sector-adapter";
+import { buildSectorConfig }     from "@/lib/sector-adapter"
+import { AISectorBrief }       from '@/components/ai/AISectorBrief';
 import { OIL_GAS_SYMBOLS }       from "@/constants";
 import oilGasData                from "@/data/sectors/oil-gas";
 
@@ -207,6 +208,9 @@ export default async function OilGasFrameworkPage() {
 
   const analyticsSlot = (
     <>
+      {/* AI Sector Brief — served from ai_outputs, silently absent if not generated */}
+      <AISectorBrief sectorSlug="oil-gas" />
+
       {/* 1 — Sector Overview */}
       <ExpandableSection
         id="overview"

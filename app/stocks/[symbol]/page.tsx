@@ -4,6 +4,10 @@ import { getStockCorporateData }               from "@/services/api/research";
 import { getFinancialHistory }                 from "@/services/api/fundamentals";
 import { getStockFinancialData }               from "@/services/api/financials";
 import { getReportsByTicker }                  from "@/services/api/research";
+import { getConvictionScore }                  from "@/services/api/intelligence";
+import { ConvictionBadge }                     from "@/components/intelligence/ConvictionBadge";
+import { AICompanyNarrative }                from "@/components/ai/AICompanyNarrative";
+import { AlertsFeed }                        from "@/components/alerts/AlertsFeed";
 import { formatPrice, formatChange, formatPercent, formatVolume, formatMarketCap } from "@/lib/formatters";
 import { Company, Dividend, FinancialMetrics, FinancialRatioSnapshot } from "@/types";
 import { SECTOR_SLUG }                         from "@/constants";
@@ -141,12 +145,13 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
     );
   }
 
-  const [peers, { dividends, announcements }, metrics, reports, financialData] = await Promise.all([
+  const [peers, { dividends, announcements }, metrics, reports, financialData, convictionScore] = await Promise.all([
     getCompanyPeers(company.sector, sym, 6),
     getStockCorporateData(sym),
     getFinancialHistory(sym, 8),
     getReportsByTicker(sym, 4),
     getStockFinancialData(sym),
+    getConvictionScore(sym),
   ]);
 
   // ── Company intelligence routing ──────────────────────────────────────────
@@ -233,6 +238,14 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
               )}
             </div>
             <p className="text-tx-secondary text-lg">{company.company_name}</p>
+            {convictionScore && (
+              <div className="mt-2 flex items-center gap-2">
+                <ConvictionBadge tier={convictionScore.tier} score={convictionScore.score} size="sm" />
+                <a href="/intelligence" className="text-[10px] font-mono text-tx-disabled hover:text-tx-secondary transition-colors">
+                  View full board
+                </a>
+              </div>
+            )}
             {company.website && (
               <a href={company.website} target="_blank" rel="noopener noreferrer"
                 className="text-xs text-tx-disabled hover:text-tx-secondary font-mono mt-1 inline-block transition-colors">
@@ -457,6 +470,16 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
             </div>
           </section>
         </div>
+
+        {/* COMPANY ALERTS — active intelligence alerts for this symbol */}
+        <AlertsFeed referenceKey={sym} context="company" limit={5} />
+
+        {/* AI COMPANY INTELLIGENCE — narrative + conviction context */}
+        {/* Served from ai_outputs (is_current=true). Silently absent when not yet generated. */}
+        <section>
+          <SectionLabel>Company Intelligence</SectionLabel>
+          <AICompanyNarrative symbol={sym} />
+        </section>
 
         {/* INVESTMENT THESIS */}
         <section>

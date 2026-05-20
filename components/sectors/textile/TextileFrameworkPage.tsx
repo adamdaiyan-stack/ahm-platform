@@ -25,7 +25,8 @@
 import { getCompaniesBySymbols }           from "@/services/api/companies";
 import { getReportsBySector }              from "@/services/api/research";
 import { getSectorBySlug, getSectorDrivers } from "@/services/api/intelligence";
-import { buildSectorConfig }               from "@/lib/sector-adapter";
+import { buildSectorConfig }               from "@/lib/sector-adapter"
+import { AISectorBrief }       from '@/components/ai/AISectorBrief';
 import { TEXTILE_SYMBOLS }       from "@/constants";
 import textilesData              from "@/data/sectors/textiles";
 
@@ -193,6 +194,9 @@ export default async function TextileFrameworkPage() {
 
   const analyticsSlot = (
     <>
+      {/* AI Sector Brief — served from ai_outputs, silently absent if not generated */}
+      <AISectorBrief sectorSlug="textiles" />
+
       {/* 1 — Sector Overview */}
       <ExpandableSection
         id="overview"

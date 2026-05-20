@@ -30,7 +30,8 @@
 import { getCompaniesBySymbols }           from "@/services/api/companies";
 import { getReportsBySector }              from "@/services/api/research";
 import { getSectorBySlug, getSectorDrivers } from "@/services/api/intelligence";
-import { buildSectorConfig }               from "@/lib/sector-adapter";
+import { buildSectorConfig }               from "@/lib/sector-adapter"
+import { AISectorBrief }       from '@/components/ai/AISectorBrief';
 import { POWER_SYMBOLS }         from "@/constants";
 import powerData                 from "@/data/sectors/power-ipp";
 
@@ -218,6 +219,9 @@ export default async function PowerFrameworkPage() {
 
   const analyticsSlot = (
     <>
+      {/* AI Sector Brief — served from ai_outputs, silently absent if not generated */}
+      <AISectorBrief sectorSlug="power-ipp" />
+
       {/* 1 — Sector Overview */}
       <ExpandableSection
         id="overview"
