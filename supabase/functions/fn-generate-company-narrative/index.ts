@@ -1,73 +1,60 @@
 // supabase/functions/fn-generate-company-narrative/index.ts
 //
-// Edge Function: generate (or serve cached) company_narrative + conviction_interpretation
-// for a single PSX-listed company.
-//
-// REQUEST
-//   POST /functions/v1/fn-generate-company-narrative
-//   Body: { "symbol": "ENGRO" }
-//   OR
-//   GET  /functions/v1/fn-generate-company-narrative?symbol=ENGRO
-//
-// RESPONSE
-//   {
-//     "symbol": "ENGRO",
-//     "narrative": { outputId, rawText, fromCache, skipped, qualityStatus, ... },
-//     "conviction":{ outputId, rawText, fromCache, skipped, qualityStatus, ... }
-//   }
-//
-// ARCHITECTURE
-//   All Claude API calls, caching, quality checks, and DB writes are handled by
-//   _shared/ai-generator.ts. This function only assembles the structured input
-//   context from DB and formats the template substitutions.
-//
-//   The LLM receives ONLY structured outputs (conviction scores, validated metrics,
-//   curated intelligence blocks) -- NOT raw financial statements.
+// Generates company_narrative + conviction_interpretation for a single PSX company.
+// REQUEST: POST { "symbol": "HBL" }  OR  GET ?symbol=HBL
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { generate }     from '../_shared/ai-generator.ts';
 
-// ---- Types ------------------------------------------------------------------
+// ---- Types (aligned to actual DB schema) ------------------------------------
 
-type SubScoreRow = {
-  sub_score_key:     string;
-  raw_score:         number;
-  weighted_score:    number;
-  weight:            number;
-  confidence:        number;
-  data_sources:      string[];
-  calculation_notes: string[];
+type CompanyRow = {
+  symbol:       string;
+  company_name: string;
+  sector:       string;
+  market_cap:   number | null;
 };
 
 type ConvictionRow = {
-  composite_score:   number;
-  tier:              string;
-  confidence_score:  number;
-  data_completeness: number;
-  scored_at:         string;
+  score:           number;
+  tier:            string;
+  data_confidence: number;
+  sub_scores:      Record<string, { score: number; confidence: number; notes: string[] }>;
+  inputs_snapshot: Record<string, unknown>;
+  scored_at:       string;
 };
 
 type IntelBlockRow = {
-  block_type:   string;
-  title:        string;
-  body:         string;
-  priority:     number;
-  source_label: string | null;
+  block_type:  string;
+  title:       string;
+  body:        string | null;
+  severity:    string | null;
+  horizon:     string | null;
+  sort_order:  number;
+  source:      string | null;
 };
 
-type FinancialRatioRow = {
-  metric_key: string;
-  value:      number;
-  period_end: string;
-  unit:       string | null;
+type RatioRow = {
+  pe_ratio:       number | null;
+  pb_ratio:       number | null;
+  ev_ebitda:      number | null;
+  roe:            number | null;
+  net_margin:     number | null;
+  ebitda_margin:  number | null;
+  debt_to_equity: number | null;
+  interest_cover: number | null;
+  eps_growth:     number | null;
+  revenue_growth: number | null;
+  pat_growth:     number | null;
+  dividend_yield: number | null;
+  period_key:     string | null;
+  snapshot_date:  string | null;
 };
 
-type CompanyRow = {
-  symbol:         string;
-  company_name:   string;
-  sector_name:    string;
-  listing_date:   string | null;
-  market_cap_pkr: number | null;
+type SectorDriverRow = {
+  driver_name:  string;
+  trend:        string;
+  description:  string | null;
 };
 
 // ---- Context assembly -------------------------------------------------------
@@ -78,187 +65,228 @@ async function assembleContext(
 ) {
   const sym = symbol.toUpperCase();
 
-  const [
-    companyRes,
-    convictionRes,
-    subScoresRes,
-    intelBlocksRes,
-    ratiosRes,
-  ] = await Promise.all([
+  const [companyRes, convictionRes, blocksRes, ratioRes] = await Promise.all([
     db.from('companies')
-      .select('symbol,company_name,sector_name,listing_date,market_cap_pkr')
+      .select('symbol,company_name,sector,market_cap')
       .eq('symbol', sym)
       .single<CompanyRow>(),
 
     db.from('conviction_scores')
-      .select('composite_score,tier,confidence_score,data_completeness,scored_at')
+      .select('score,tier,data_confidence,sub_scores,inputs_snapshot,scored_at')
       .eq('symbol', sym)
       .eq('is_current', true)
       .single<ConvictionRow>(),
 
-    db.from('conviction_sub_scores')
-      .select('sub_score_key,raw_score,weighted_score,weight,confidence,data_sources,calculation_notes')
-      .eq('symbol', sym)
-      .eq('is_current', true)
-      .order('weight', { ascending: false })
-      .returns<SubScoreRow[]>(),
-
-    db.from('intelligence_blocks')
-      .select('block_type,title,body,priority,source_label')
+    db.from('company_intelligence_blocks')
+      .select('block_type,title,body,severity,horizon,sort_order,source')
       .eq('symbol', sym)
       .eq('is_active', true)
-      .order('priority', { ascending: false })
-      .limit(12)
+      .order('sort_order', { ascending: false })
+      .limit(15)
       .returns<IntelBlockRow[]>(),
 
-    db.from('financial_ratios')
-      .select('metric_key,value,period_end,unit')
+    db.from('financial_ratio_snapshots')
+      .select('pe_ratio,pb_ratio,ev_ebitda,roe,net_margin,ebitda_margin,debt_to_equity,interest_cover,eps_growth,revenue_growth,pat_growth,dividend_yield,period_key,snapshot_date')
       .eq('symbol', sym)
-      .in('metric_key', [
-        'pe_ratio', 'pb_ratio', 'ev_ebitda', 'roe', 'roa', 'roic',
-        'debt_to_equity', 'current_ratio', 'interest_cover',
-        'revenue_growth_yoy', 'pat_growth_yoy', 'ebitda_margin',
-        'net_margin', 'dividend_yield', 'payout_ratio',
-      ])
-      .order('period_end', { ascending: false })
-      .limit(30)
-      .returns<FinancialRatioRow[]>(),
+      .order('snapshot_date', { ascending: false })
+      .limit(1)
+      .single<RatioRow>(),
   ]);
 
+  const company = companyRes.data;
+
+  // Sector drivers — secondary query after company fetch
+  let sectorDrivers: SectorDriverRow[] = [];
+  if (company?.sector) {
+    const { data: sectorData } = await db
+      .from('sectors')
+      .select('slug')
+      .eq('db_sector_name', company.sector)
+      .single();
+    if (sectorData?.slug) {
+      const { data: drivers } = await db
+        .from('sector_drivers')
+        .select('driver_name,trend,description')
+        .eq('sector_slug', sectorData.slug)
+        .order('sort_order', { ascending: true })
+        .limit(6)
+        .returns<SectorDriverRow[]>();
+      sectorDrivers = drivers ?? [];
+    }
+  }
+
   return {
-    company:     companyRes.data     ?? null,
-    conviction:  convictionRes.data  ?? null,
-    subScores:   subScoresRes.data   ?? [],
-    intelBlocks: intelBlocksRes.data ?? [],
-    ratios:      ratiosRes.data      ?? [],
+    company,
+    conviction:    convictionRes.data ?? null,
+    blocks:        blocksRes.data     ?? [],
+    ratio:         ratioRes.data      ?? null,
+    sectorDrivers,
   };
 }
 
-// ---- Substitution formatters ------------------------------------------------
+// ---- Utility formatters -----------------------------------------------------
 
-function formatSubScores(rows: SubScoreRow[]): string {
-  if (!rows.length) return 'No sub-score data available.';
-  return rows
-    .map(r => {
-      const key    = r.sub_score_key.replace(/_/g, ' ');
-      const weight = (r.weight * 100).toFixed(0);
-      const conf   = (r.confidence * 100).toFixed(0);
-      return `${key}: ${r.raw_score.toFixed(1)}/100 (weight ${weight}%, confidence ${conf}%)`;
-    })
-    .join('\n');
+function blocksByType(blocks: IntelBlockRow[], types: string[]): string {
+  const filtered = blocks.filter(b => types.includes(b.block_type));
+  if (!filtered.length) return 'None on record.';
+  return filtered.map(b => {
+    const sev = b.severity ? ` [${b.severity.toUpperCase()}]` : '';
+    const hor = b.horizon  ? ` (${b.horizon}-term)` : '';
+    return `• ${b.title}${sev}${hor}\n  ${b.body ?? ''}`;
+  }).join('\n');
 }
 
-function formatIntelBlocks(rows: IntelBlockRow[]): string {
-  if (!rows.length) return 'No intelligence blocks available.';
-  return rows
-    .map(r => {
-      const src = r.source_label ? ` [${r.source_label}]` : '';
-      return `[${r.block_type.toUpperCase()}] ${r.title}${src}\n${r.body}`;
-    })
-    .join('\n\n');
+function fmtRatio(val: number | null, decimals = 1, suffix = ''): string {
+  return val != null ? val.toFixed(decimals) + suffix : 'n/a';
 }
 
-function formatRatios(rows: FinancialRatioRow[]): string {
-  if (!rows.length) return 'No financial ratio data available.';
-  // Deduplicate to latest period per metric
-  const seen = new Set<string>();
-  const deduped = rows.filter(r => {
-    if (seen.has(r.metric_key)) return false;
-    seen.add(r.metric_key);
-    return true;
-  });
-  return deduped
-    .map(r => {
-      const unit = r.unit ? ` ${r.unit}` : '';
-      const fmt  = Number.isInteger(r.value) ? r.value.toString() : r.value.toFixed(2);
-      return `${r.metric_key.replace(/_/g, ' ')}: ${fmt}${unit}`;
-    })
-    .join('\n');
-}
+// ---- Substitution builders (must match ai_prompt_templates.variables) -------
 
 function buildNarrativeSubstitutions(
-  ctx: Awaited<ReturnType<typeof assembleContext>>,
+  ctx:    Awaited<ReturnType<typeof assembleContext>>,
+  symbol: string,
 ): Record<string, string> {
   const co  = ctx.company;
   const cvx = ctx.conviction;
+  const sub = (cvx?.sub_scores ?? {}) as Record<string, { score: number }>;
+  const ratio = ctx.ratio;
+
+  const scoreFn = (key: string) => {
+    const s = sub[key]?.score;
+    return s != null ? s.toFixed(0) : 'N/A';
+  };
+
+  // Key metrics from ratio snapshot
+  const metricLines: string[] = [];
+  if (ratio) {
+    if (ratio.pe_ratio       != null) metricLines.push(`P/E: ${fmtRatio(ratio.pe_ratio)}x`);
+    if (ratio.pb_ratio       != null) metricLines.push(`P/B: ${fmtRatio(ratio.pb_ratio, 2)}x`);
+    if (ratio.ev_ebitda      != null) metricLines.push(`EV/EBITDA: ${fmtRatio(ratio.ev_ebitda)}x`);
+    if (ratio.roe            != null) metricLines.push(`ROE: ${fmtRatio(ratio.roe)}%`);
+    if (ratio.net_margin     != null) metricLines.push(`Net Margin: ${fmtRatio(ratio.net_margin)}%`);
+    if (ratio.ebitda_margin  != null) metricLines.push(`EBITDA Margin: ${fmtRatio(ratio.ebitda_margin)}%`);
+    if (ratio.debt_to_equity != null) metricLines.push(`D/E: ${fmtRatio(ratio.debt_to_equity, 2)}x`);
+    if (ratio.interest_cover != null) metricLines.push(`Int. Cover: ${fmtRatio(ratio.interest_cover)}x`);
+    if (ratio.eps_growth     != null) metricLines.push(`EPS Growth: ${fmtRatio(ratio.eps_growth)}%`);
+    if (ratio.revenue_growth != null) metricLines.push(`Revenue Growth: ${fmtRatio(ratio.revenue_growth)}%`);
+    if (ratio.dividend_yield != null) metricLines.push(`Div Yield: ${fmtRatio(ratio.dividend_yield, 2)}%`);
+  }
+
+  // Sector driver summary
+  const driverSummary = ctx.sectorDrivers.length
+    ? ctx.sectorDrivers.map(d => {
+        const sym = d.trend === 'positive' ? '+' : d.trend === 'negative' ? '-' : '~';
+        return `${sym} ${d.driver_name}${d.description ? ': ' + d.description : ''}`;
+      }).join('\n')
+    : 'Sector driver data not available.';
+
+  // Valuation
+  const valPoints: string[] = [];
+  if (ratio?.pe_ratio  != null) valPoints.push(`P/E: ${fmtRatio(ratio.pe_ratio)}x`);
+  if (ratio?.pb_ratio  != null) valPoints.push(`P/B: ${fmtRatio(ratio.pb_ratio, 2)}x`);
+  if (ratio?.ev_ebitda != null) valPoints.push(`EV/EBITDA: ${fmtRatio(ratio.ev_ebitda)}x`);
+
   return {
-    company_name:      co?.company_name    ?? 'Unknown Company',
-    symbol:            co?.symbol          ?? 'N/A',
-    sector:            co?.sector_name     ?? 'Unknown Sector',
-    conviction_score:  cvx ? cvx.composite_score.toFixed(1) : 'N/A',
-    conviction_tier:   cvx?.tier           ?? 'N/A',
-    data_completeness: cvx ? (cvx.data_completeness * 100).toFixed(0) + '%' : 'N/A',
-    confidence_score:  cvx ? (cvx.confidence_score * 100).toFixed(0) + '%' : 'N/A',
-    sub_scores:        formatSubScores(ctx.subScores),
-    intel_blocks:      formatIntelBlocks(ctx.intelBlocks),
-    financial_ratios:  formatRatios(ctx.ratios),
-    scored_at:         cvx?.scored_at      ?? new Date().toISOString(),
+    symbol:            co?.symbol       ?? symbol,
+    company_name:      co?.company_name ?? symbol,
+    conviction_score:  cvx ? cvx.score.toFixed(0) : 'N/A',
+    conviction_tier:   cvx?.tier        ?? 'N/A',
+    conviction_trend:  'Not available (first score run)',
+    score_valuation:   scoreFn('valuation'),
+    score_profitability: scoreFn('profitability'),
+    score_growth:        scoreFn('growth'),
+    score_balance_sheet: scoreFn('balance_sheet'),
+    score_catalyst:      scoreFn('catalyst'),
+    score_risk:          scoreFn('risk'),
+    thesis_summary:    blocksByType(ctx.blocks, ['thesis', 'takeaway']),
+    thesis_themes:     blocksByType(ctx.blocks, ['theme', 'trend']),
+    drivers:           blocksByType(ctx.blocks, ['catalyst', 'driver']),
+    risks:             blocksByType(ctx.blocks, ['risk', 'regulatory_risk']),
+    catalysts:         blocksByType(ctx.blocks, ['catalyst']),
+    valuation_points:  valPoints.length ? valPoints.join(' | ') : 'No valuation data available.',
+    valuation_summary: ratio ? `Latest period: ${ratio.period_key ?? 'N/A'}` : 'No financial data available.',
+    sector:            co?.sector       ?? 'N/A',
+    sector_driver_summary: driverSummary,
+    metrics_period:    ratio?.period_key ?? 'N/A',
+    key_metrics:       metricLines.length ? metricLines.join('\n') : 'No financial metrics available.',
   };
 }
 
 function buildConvictionSubstitutions(
-  ctx: Awaited<ReturnType<typeof assembleContext>>,
+  ctx:    Awaited<ReturnType<typeof assembleContext>>,
+  symbol: string,
 ): Record<string, string> {
   const co  = ctx.company;
   const cvx = ctx.conviction;
+  const sub = (cvx?.sub_scores ?? {}) as Record<string, { score: number }>;
 
-  const top3 = [...ctx.subScores]
-    .sort((a, b) => b.raw_score - a.raw_score)
-    .slice(0, 3)
-    .map(r => `${r.sub_score_key.replace(/_/g, ' ')}: ${r.raw_score.toFixed(1)}`)
-    .join(', ');
+  const scoreFn = (key: string) => {
+    const s = sub[key]?.score;
+    return s != null ? s.toFixed(0) : 'N/A';
+  };
 
-  const bottom2 = [...ctx.subScores]
-    .sort((a, b) => a.raw_score - b.raw_score)
-    .slice(0, 2)
-    .map(r => `${r.sub_score_key.replace(/_/g, ' ')}: ${r.raw_score.toFixed(1)}`)
-    .join(', ');
+  // Highest / lowest sub-scores (exclude technical_timing which is always 50)
+  const scoreEntries = Object.entries(sub)
+    .filter(([k]) => k !== 'technical_timing')
+    .map(([k, v]) => ({ name: k.replace(/_/g, ' '), score: (v as any).score ?? 50 }))
+    .sort((a, b) => b.score - a.score);
 
-  const riskBlocks = ctx.intelBlocks
-    .filter(b => b.block_type === 'risk' || b.block_type === 'regulatory_risk')
-    .slice(0, 3)
-    .map(b => b.title)
-    .join('; ') || 'None identified';
+  const highest = scoreEntries[0];
+  const lowest  = scoreEntries[scoreEntries.length - 1];
+
+  // Valuation signal from inputs_snapshot
+  const inp = (cvx?.inputs_snapshot ?? {}) as Record<string, unknown>;
+  const pe    = inp.pe_ratio as number | null;
+  const medPE = inp.sector_median_pe as number | null;
+  const valSignal = (() => {
+    if (!pe) return 'Insufficient valuation data';
+    if (!medPE) return `PE ratio: ${pe.toFixed(1)}x`;
+    const ratio = pe / medPE;
+    if (ratio < 0.8) return `Discount to sector median (${pe.toFixed(1)}x vs ${medPE.toFixed(1)}x sector median)`;
+    if (ratio > 1.2) return `Premium to sector median (${pe.toFixed(1)}x vs ${medPE.toFixed(1)}x sector median)`;
+    return `In line with sector median (${pe.toFixed(1)}x vs ${medPE.toFixed(1)}x sector median)`;
+  })();
 
   return {
-    company_name:      co?.company_name  ?? 'Unknown Company',
-    symbol:            co?.symbol        ?? 'N/A',
-    sector:            co?.sector_name   ?? 'Unknown Sector',
-    conviction_score:  cvx ? cvx.composite_score.toFixed(1) : 'N/A',
-    conviction_tier:   cvx?.tier         ?? 'N/A',
-    top_sub_scores:    top3              || 'N/A',
-    weak_sub_scores:   bottom2           || 'N/A',
-    key_risks:         riskBlocks,
-    data_completeness: cvx ? (cvx.data_completeness * 100).toFixed(0) + '%' : 'N/A',
+    symbol:         co?.symbol       ?? symbol,
+    company_name:   co?.company_name ?? symbol,
+    conviction_score: cvx ? cvx.score.toFixed(0) : 'N/A',
+    conviction_tier:  cvx?.tier      ?? 'N/A',
+    previous_score: 'N/A (first score run)',
+    previous_tier:  'N/A',
+    score_valuation:        scoreFn('valuation'),
+    valuation_signal:       valSignal,
+    score_profitability:    scoreFn('profitability'),
+    score_growth:           scoreFn('growth'),
+    score_balance_sheet:    scoreFn('balance_sheet'),
+    score_catalyst:         scoreFn('catalyst'),
+    score_risk:             scoreFn('risk'),
+    score_sector_relative:  scoreFn('sector_relative_strength'),
+    data_confidence:        cvx ? (cvx.data_confidence * 100).toFixed(0) + '%' : 'N/A',
+    highest_subscore_name:  highest?.name           ?? 'N/A',
+    highest_subscore_value: highest?.score.toFixed(0) ?? 'N/A',
+    lowest_subscore_name:   lowest?.name            ?? 'N/A',
+    lowest_subscore_value:  lowest?.score.toFixed(0) ?? 'N/A',
   };
 }
-
-// ---- Input snapshot for cache change detection ------------------------------
 
 function buildInputSnapshot(
   ctx:    Awaited<ReturnType<typeof assembleContext>>,
   symbol: string,
 ): Record<string, unknown> {
+  const cvx = ctx.conviction;
+  const sub = (cvx?.sub_scores ?? {}) as Record<string, { score: number }>;
   return {
     symbol,
-    conviction_score:   ctx.conviction?.composite_score   ?? null,
-    conviction_tier:    ctx.conviction?.tier              ?? null,
-    data_completeness:  ctx.conviction?.data_completeness ?? null,
-    scored_at:          ctx.conviction?.scored_at         ?? null,
-    sub_score_count:    ctx.subScores.length,
-    sub_scores: ctx.subScores.map(r => ({
-      key:   r.sub_score_key,
-      score: r.raw_score,
-      conf:  r.confidence,
-    })),
-    intel_block_count: ctx.intelBlocks.length,
-    intel_block_keys:  ctx.intelBlocks.map(b => b.block_type + ':' + b.title.slice(0, 40)),
-    ratio_count:       ctx.ratios.length,
-    ratios: ctx.ratios.slice(0, 15).map(r => ({
-      key:    r.metric_key,
-      value:  r.value,
-      period: r.period_end,
-    })),
+    conviction_score:  cvx?.score          ?? null,
+    conviction_tier:   cvx?.tier           ?? null,
+    data_confidence:   cvx?.data_confidence ?? null,
+    scored_at:         cvx?.scored_at       ?? null,
+    sub_score_summary: Object.entries(sub).map(([k, v]) => ({ key: k, score: (v as any).score })),
+    intel_block_count: ctx.blocks.length,
+    intel_block_keys:  ctx.blocks.map((b: any) => `${b.block_type}:${b.title.slice(0, 40)}`),
+    has_financial_data: !!ctx.ratio,
+    metrics_period:    ctx.ratio?.period_key ?? null,
   };
 }
 
@@ -275,7 +303,6 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // Parse symbol from body or query string
     let symbol = '';
     if (req.method === 'GET') {
       symbol = new URL(req.url).searchParams.get('symbol') ?? '';
@@ -292,15 +319,11 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Build service-role DB client
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const serviceKey  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    if (!supabaseUrl || !serviceKey) {
-      throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
-    }
+    if (!supabaseUrl || !serviceKey) throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
     const db = createClient(supabaseUrl, serviceKey);
 
-    // Assemble structured context -- the only DB reads in this function
     const ctx = await assembleContext(db, symbol);
 
     if (!ctx.company) {
@@ -310,11 +333,9 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Build input snapshot for cache change detection
     const inputSnapshot = buildInputSnapshot(ctx, symbol);
 
-    // Generate (or serve cached) company_narrative
-    const narrativeSubs   = buildNarrativeSubstitutions(ctx);
+    const narrativeSubs   = buildNarrativeSubstitutions(ctx, symbol);
     const narrativeResult = await generate(db, {
       outputType:    'company_narrative',
       referenceKey:  symbol,
@@ -322,8 +343,7 @@ Deno.serve(async (req: Request) => {
       inputSnapshot,
     });
 
-    // Generate (or serve cached) conviction_interpretation
-    const convictionSubs   = buildConvictionSubstitutions(ctx);
+    const convictionSubs   = buildConvictionSubstitutions(ctx, symbol);
     const convictionResult = await generate(db, {
       outputType:    'conviction_interpretation',
       referenceKey:  symbol,
@@ -331,7 +351,6 @@ Deno.serve(async (req: Request) => {
       inputSnapshot,
     });
 
-    // Log generation job (fire-and-forget)
     const totalTokens =
       (narrativeResult.promptTokens    + convictionResult.promptTokens) +
       (narrativeResult.completionTokens + convictionResult.completionTokens);
@@ -340,15 +359,7 @@ Deno.serve(async (req: Request) => {
       function_name:         'fn-generate-company-narrative',
       reference_key:         symbol,
       output_types:          ['company_narrative', 'conviction_interpretation'],
-      narrative_output_id:   narrativeResult.outputId,
-      conviction_output_id:  convictionResult.outputId,
       total_tokens:          totalTokens,
-      narrative_from_cache:  narrativeResult.fromCache,
-      conviction_from_cache: convictionResult.fromCache,
-      narrative_skipped:     narrativeResult.skipped,
-      conviction_skipped:    convictionResult.skipped,
-      narrative_quality:     narrativeResult.qualityStatus,
-      conviction_quality:    convictionResult.qualityStatus,
       generation_ms:         narrativeResult.generationMs + convictionResult.generationMs,
     }).catch((e: Error) => console.warn('ai_generation_jobs insert failed:', e.message));
 
@@ -360,7 +371,6 @@ Deno.serve(async (req: Request) => {
           rawText:          narrativeResult.rawText,
           fromCache:        narrativeResult.fromCache,
           skipped:          narrativeResult.skipped,
-          skipReason:       narrativeResult.skipReason,
           qualityStatus:    narrativeResult.qualityStatus,
           promptTokens:     narrativeResult.promptTokens,
           completionTokens: narrativeResult.completionTokens,
@@ -371,7 +381,6 @@ Deno.serve(async (req: Request) => {
           rawText:          convictionResult.rawText,
           fromCache:        convictionResult.fromCache,
           skipped:          convictionResult.skipped,
-          skipReason:       convictionResult.skipReason,
           qualityStatus:    convictionResult.qualityStatus,
           promptTokens:     convictionResult.promptTokens,
           completionTokens: convictionResult.completionTokens,
