@@ -287,7 +287,7 @@ export async function generate(
     checks_run:     quality.checks,
     violations:     quality.violations,
     requires_review: quality.violations.some((v: any) => v.status === 'failed'),
-  }).catch(e => console.warn('quality check log failed:', e.message));
+  }).then(({ error }: { error: Error | null }) => { if (error) console.warn('quality check log failed:', error.message); });
 
   return {
     outputId:         newRow.id,

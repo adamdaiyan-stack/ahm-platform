@@ -227,7 +227,7 @@ Deno.serve(async (req: Request) => {
     // Substitutions aligned to market_summary template variables
     const baseSubstitutions: Record<string, string> = {
       snapshot_date: today,
-      snapshot_type:
+      snapshot_type: snapshot_type,
       kse100_level:   idx ? idx.level.toLocaleString() : 'N/A',
       kse100_change_pct: idx ? (idx.change_percent >= 0 ? '+' : '') + idx.change_percent.toFixed(2) : 'N/A',
       market_volume:  idx?.volume ? (idx.volume / 1e9).toFixed(2) + 'B' : 'N/A',
