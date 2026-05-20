@@ -88,12 +88,11 @@ jobs:
             ${{ steps.force.outputs.force_arg }} \
             --manual
 
-      # ── Step 2: Ingest KSE-100 index (separate fetch to avoid rate-limits) ──
-      - name: Ingest KSE index data
+      # ── Step 2: Sync market index (derived from daily_prices — no external fetch) ──
+      - name: Sync KSE-100 market index
         run: |
-          npx tsx scripts/pipelines/ingest-kse-index.ts \
-            ${{ steps.date.outputs.date_arg }} \
-            ${{ steps.force.outputs.force_arg }}
+          npx tsx scripts/pipelines/sync-market-index.ts \
+            ${{ steps.date.outputs.date_arg }}
 
       # ── Step 3: Sync company snapshots ─────────────────────────────────
       - name: Sync company snapshot fields
