@@ -1,7 +1,7 @@
 /**
  * scripts/pipelines/ingest-financial-data.ts
  *
- * AHM Canonical Financial Data Ingestion Pipeline — v1.0.0
+ * AHM Canonical Financial Data Ingestion Pipeline — v1.1.0
  *
  * Reads structured CSV/JSON financial input files, validates, computes
  * ratios deterministically, and upserts into financial_ratio_snapshots.
@@ -12,14 +12,15 @@
  *   npx tsx scripts/pipelines/ingest-financial-data.ts --dir=data/financials/  (process all files)
  *   npx tsx scripts/pipelines/ingest-financial-data.ts --dry-run --file=...    (validate only)
  *
- * Input format: CSV with headers matching FinancialStatementInputs fields.
- * See data/financials/TEMPLATE.csv for the canonical input template.
+ * Input format: CSV with headers matching FinancialStatementInputs fields
+ * plus audit trail fields. See data/financials/TEMPLATE_WITH_AUDIT.csv.
  *
  * RULES:
  *   - Invalid rows (validation errors) are REJECTED — never written to DB.
  *   - Warnings are logged but do not block ingestion.
  *   - All ratios are computed fresh from inputs — never trust pre-computed ratios in CSV.
  *   - Existing rows are upserted (conflict on symbol + period_key).
+ *   - Every row must have source provenance per DATA_SOURCES.md policy.
  */
 
 import fs   from 'fs';
@@ -28,6 +29,32 @@ import { supabaseAdmin } from '../utils/supabase-admin.js';
 import { validateFinancialInputs, formatValidationReport } from '../intelligence/financial-validator.js';
 import { computeRatios } from '../intelligence/compute-ratios.js';
 import type { FinancialStatementInputs } from '../intelligence/financial-definitions.js';
+
+// ─── Audit Trail Type ──────────────────────────────────────────────────────────
+
+interface AuditTrail {
+  source_document:     string | null;
+  source_url:          string | null;
+  source_page:         string | null;
+  source_type:         string | null;
+  is_audited:          boolean;
+  entered_by:          string | null;
+  verified_by:         string | null;
+  ingestion_batch:     string | null;
+  verification_status: string;
+  notes:               string | null;
+}
+
+const VALID_SOURCE_TYPES = new Set([
+  'annual_report', 'half_year_report', 'quarterly_report',
+  'psx_notice', 'secp_filing', 'bloomberg_terminal',
+  'analyst_model', 'api_provider', 'management_accounts',
+  'press_release', 'web_scrape',
+]);
+
+const VALID_VERIFICATION_STATUSES = new Set([
+  'needs_verification', 'verified', 'disputed', 're-verified',
+]);
 
 // ─── CSV Parser ───────────────────────────────────────────────────────────────
 
@@ -51,6 +78,11 @@ function parseNumber(val: string | undefined): number | null {
 function parseBool(val: string | undefined): boolean {
   if (!val) return false;
   return val.toLowerCase() === 'true' || val === '1';
+}
+
+function parseNullableString(val: string | undefined): string | null {
+  if (!val || val.trim() === '' || val.trim() === '-') return null;
+  return val.trim();
 }
 
 /** Map a raw CSV/JSON row to FinancialStatementInputs */
@@ -104,6 +136,49 @@ function mapToInputs(row: Record<string, string>): Partial<FinancialStatementInp
   };
 }
 
+/** Extract and validate audit trail fields from a CSV row */
+function mapToAuditTrail(row: Record<string, string>): { audit: AuditTrail; auditWarnings: string[] } {
+  const warnings: string[] = [];
+
+  const source_type = parseNullableString(row.source_type);
+  if (source_type && !VALID_SOURCE_TYPES.has(source_type)) {
+    warnings.push(`Unknown source_type "${source_type}" — will store but not in controlled vocabulary`);
+  }
+
+  const verification_status = parseNullableString(row.verification_status) ?? 'needs_verification';
+  if (!VALID_VERIFICATION_STATUSES.has(verification_status)) {
+    warnings.push(`Unknown verification_status "${verification_status}" — defaulting to needs_verification`);
+  }
+
+  const entered_by = parseNullableString(row.entered_by);
+  if (entered_by === 'PENDING' || entered_by === null) {
+    warnings.push('entered_by is blank or PENDING — row lacks provenance attribution');
+  }
+
+  const source_document = parseNullableString(row.source_document);
+  if (!source_document) {
+    warnings.push('source_document is blank — every row should reference its source per DATA_SOURCES.md');
+  }
+
+  return {
+    audit: {
+      source_document,
+      source_url:          parseNullableString(row.source_url),
+      source_page:         parseNullableString(row.source_page),
+      source_type,
+      is_audited:          parseBool(row.is_audited),
+      entered_by:          entered_by === 'PENDING' ? null : entered_by,
+      verified_by:         parseNullableString(row.verified_by),
+      ingestion_batch:     parseNullableString(row.ingestion_batch),
+      verification_status: VALID_VERIFICATION_STATUSES.has(verification_status)
+        ? verification_status
+        : 'needs_verification',
+      notes:               parseNullableString(row.notes),
+    },
+    auditWarnings: warnings,
+  };
+}
+
 // ─── DB write ─────────────────────────────────────────────────────────────────
 
 async function getSectorForSymbol(symbol: string): Promise<string | null> {
@@ -117,21 +192,27 @@ async function getSectorForSymbol(symbol: string): Promise<string | null> {
 
 async function upsertSnapshot(
   inp: FinancialStatementInputs,
+  audit: AuditTrail,
   sector: string | null,
 ): Promise<{ ok: boolean; error?: string }> {
   const ratios = computeRatios(inp, sector ?? undefined);
 
   const row = {
+    // ── Financial period ──────────────────────────────────────────────────────
     symbol:             inp.symbol,
     period_key:         inp.period_key,
     period_type:        inp.period_type,
-    period_end:         inp.period_end,
+    period_end:         inp.period_end ?? null,
     is_ttm:             inp.is_ttm,
     snapshot_date:      inp.snapshot_date,
+
+    // ── Market inputs ─────────────────────────────────────────────────────────
     price_used:         inp.price,
     market_cap_used:    ratios.market_cap,
     shares_outstanding: inp.shares_outstanding,
     enterprise_value:   ratios.enterprise_value,
+
+    // ── Valuation ratios ──────────────────────────────────────────────────────
     pe_ratio:           ratios.pe_ratio,
     pb_ratio:           ratios.pb_ratio,
     ev_ebitda:          ratios.ev_ebitda,
@@ -139,6 +220,8 @@ async function upsertSnapshot(
     ev_revenue:         ratios.ev_revenue,
     fcf_yield:          ratios.fcf_yield,
     dividend_yield:     ratios.dividend_yield,
+
+    // ── Profitability ─────────────────────────────────────────────────────────
     gross_margin:       ratios.gross_margin,
     ebitda_margin:      ratios.ebitda_margin,
     operating_margin:   ratios.operating_margin,
@@ -146,29 +229,52 @@ async function upsertSnapshot(
     roe:                ratios.roe,
     roa:                ratios.roa,
     roce:               ratios.roce,
+
+    // ── Growth ────────────────────────────────────────────────────────────────
     revenue_growth:     ratios.revenue_growth,
     pat_growth:         ratios.pat_growth,
     eps_growth:         ratios.eps_growth,
     revenue_cagr_3y:    ratios.revenue_cagr_3y,
     pat_cagr_3y:        ratios.pat_cagr_3y,
+
+    // ── Leverage ──────────────────────────────────────────────────────────────
     debt_to_equity:     ratios.debt_to_equity,
     net_debt_to_ebitda: ratios.net_debt_to_ebitda,
     current_ratio:      ratios.current_ratio,
     interest_cover:     ratios.interest_cover,
+
+    // ── Cash flow ─────────────────────────────────────────────────────────────
     cfo_to_pat:         ratios.cfo_to_pat,
     fcf_margin:         ratios.fcf_margin,
     capex_to_revenue:   ratios.capex_to_revenue,
+
+    // ── Per share ─────────────────────────────────────────────────────────────
     eps:                inp.eps,
     bvps:               ratios.bvps,
     cfps:               ratios.cfps,
     dps:                inp.dps,
     payout_ratio:       ratios.payout_ratio,
+
+    // ── Banking ───────────────────────────────────────────────────────────────
     nim:                ratios.nim,
     casa_ratio:         ratios.casa_ratio,
     npl_ratio:          ratios.npl_ratio,
     coverage_ratio:     ratios.coverage_ratio,
     car:                ratios.car,
     cost_to_income:     ratios.cost_to_income,
+
+    // ── Audit trail ───────────────────────────────────────────────────────────
+    source_document:    audit.source_document,
+    source_url:         audit.source_url,
+    source_page:        audit.source_page,
+    source_type:        audit.source_type,
+    is_audited:         audit.is_audited,
+    entered_by:         audit.entered_by,
+    verified_by:        audit.verified_by,
+    ingestion_batch:    audit.ingestion_batch,
+    verification_status: audit.verification_status,
+    notes:              audit.notes,
+
     computed_at:        new Date().toISOString(),
   };
 
@@ -205,7 +311,7 @@ async function main() {
   }
 
   console.log(`\n${'═'.repeat(60)}`);
-  console.log(`  AHM Financial Data Ingestion${dryRun ? ' [DRY RUN]' : ''}`);
+  console.log(`  AHM Financial Data Ingestion v1.1.0${dryRun ? ' [DRY RUN]' : ''}`);
   console.log(`  Files: ${files.length}`);
   console.log(`${'═'.repeat(60)}\n`);
 
@@ -218,11 +324,24 @@ async function main() {
       ? JSON.parse(content)
       : parseCSV(content);
 
-    console.log(`  ${rows.length} rows found\n`);
+    // Skip files with no data rows (e.g. templates with all-blank financials)
+    const dataRows = rows.filter(r => {
+      const hasAnyFinancial = ['revenue', 'pat', 'total_assets', 'total_equity', 'eps']
+        .some(f => r[f] && r[f].trim() !== '' && r[f].trim() !== '-');
+      return hasAnyFinancial;
+    });
 
-    for (const row of rows) {
+    if (dataRows.length === 0) {
+      console.log(`  ${rows.length} rows found — ALL blank (template/placeholder). Skipping file.\n`);
+      continue;
+    }
+
+    console.log(`  ${rows.length} rows found, ${dataRows.length} with financial data\n`);
+
+    for (const row of dataRows) {
       totalRows++;
       const inputs = mapToInputs(row);
+      const { audit, auditWarnings } = mapToAuditTrail(row);
       const validation = validateFinancialInputs(inputs);
 
       console.log(formatValidationReport(
@@ -231,34 +350,39 @@ async function main() {
         validation,
       ));
 
+      if (auditWarnings.length > 0) {
+        console.log('  Audit trail warnings:');
+        auditWarnings.forEach(w => console.log(`    ⚠ ${w}`));
+      }
+
       if (!validation.valid) {
         rejected++;
         console.log(`  → REJECTED — will not write to DB\n`);
         continue;
       }
 
-      if (validation.warnings.length > 0) warned++;
+      if (validation.warnings.length > 0 || auditWarnings.length > 0) warned++;
 
       if (!dryRun) {
         const sector = await getSectorForSymbol(inputs.symbol!);
-        const result = await upsertSnapshot(inputs as FinancialStatementInputs, sector);
+        const result = await upsertSnapshot(inputs as FinancialStatementInputs, audit, sector);
         if (result.ok) {
           accepted++;
-          console.log(`  → UPSERTED ✓\n`);
+          console.log(`  → UPSERTED ✓  [batch: ${audit.ingestion_batch ?? 'none'}, audited: ${audit.is_audited}]\n`);
         } else {
           rejected++;
           console.log(`  → DB ERROR: ${result.error}\n`);
         }
       } else {
         accepted++;
-        console.log(`  → DRY RUN: would upsert\n`);
+        console.log(`  → DRY RUN: would upsert  [source: ${audit.source_document ?? '<none>'}]\n`);
       }
     }
   }
 
   console.log(`${'═'.repeat(60)}`);
   console.log(`  Done: ${accepted} accepted, ${rejected} rejected, ${warned} with warnings`);
-  console.log(`  Total rows processed: ${totalRows}`);
+  console.log(`  Total rows with data: ${totalRows}`);
   if (dryRun) console.log(`  [DRY RUN] No data was written to the database.`);
   console.log(`${'═'.repeat(60)}\n`);
 

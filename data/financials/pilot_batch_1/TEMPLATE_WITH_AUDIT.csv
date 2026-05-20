@@ -1,0 +1,50 @@
+# AHM Pilot Batch 1 — Financial Data Entry Template
+# =====================================================================
+# READ DATA_SOURCES.md BEFORE ENTERING ANY DATA.
+#
+# UNITS: All PKR millions except per-share fields (PKR/share) and shares (millions).
+# NULLS: Leave blank if unavailable. Do NOT use 0 for missing data.
+# AUDIT: source_document, source_type, is_audited, entered_by, verification_status are REQUIRED.
+# =====================================================================
+symbol,period_key,period_type,period_end,is_ttm,snapshot_date,price,shares_outstanding,revenue,gross_profit,ebitda,ebit,interest_expense,pat,eps,total_assets,total_equity,total_debt,cash_equivalents,current_assets,current_liabilities,cfo,capex,dps,prev_revenue,prev_pat,prev_eps,revenue_3y_ago,pat_3y_ago,eps_3y_ago,net_interest_income,total_deposits,casa_deposits,gross_loans,non_performing_loans,loan_loss_provisions,tier1_capital,risk_weighted_assets,total_income_banking,operating_expenses,production_boepd,reserves_mmboe,prev_production_boepd,installed_capacity_mw,receivables,source_document,source_url,source_page,source_type,is_audited,entered_by,verified_by,ingestion_batch,verification_status,notes
+# ── BANKING (FY24 = Jan–Dec 2024 | FY end Dec 31) ──────────────────────────────────────────────────
+# HBL FY24: Enter from HBL Annual Report 2024
+HBL,FY24,annual,2024-12-31,false,2026-05-20,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,HBL Annual Report 2024,https://www.hbl.com/investor-relations/annual-reports,,annual_report,true,PENDING,,pilot_batch_1_2026_05,needs_verification,Awaiting data entry from annual report
+# HBL FY23: Enter from HBL Annual Report 2023
+HBL,FY23,annual,2023-12-31,false,2024-01-31,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,HBL Annual Report 2023,https://www.hbl.com/investor-relations/annual-reports,,annual_report,true,PENDING,,pilot_batch_1_2026_05,needs_verification,Awaiting data entry from annual report
+# HBL FY22: Enter from HBL Annual Report 2022
+HBL,FY22,annual,2022-12-31,false,2023-01-31,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,HBL Annual Report 2022,https://www.hbl.com/investor-relations/annual-reports,,annual_report,true,PENDING,,pilot_batch_1_2026_05,needs_verification,Awaiting data entry from annual report
+# MCB FY24
+MCB,FY24,annual,2024-12-31,false,2026-05-20,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,MCB Annual Report 2024,https://mcb.com.pk/investor-relations/annual-reports,,annual_report,true,PENDING,,pilot_batch_1_2026_05,needs_verification,Awaiting data entry from annual report
+MCB,FY23,annual,2023-12-31,false,2024-01-31,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,MCB Annual Report 2023,https://mcb.com.pk/investor-relations/annual-reports,,annual_report,true,PENDING,,pilot_batch_1_2026_05,needs_verification,Awaiting data entry from annual report
+MCB,FY22,annual,2022-12-31,false,2023-01-31,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,MCB Annual Report 2022,https://mcb.com.pk/investor-relations/annual-reports,,annual_report,true,PENDING,,pilot_batch_1_2026_05,needs_verification,Awaiting data entry from annual report
+# UBL FY24
+UBL,FY24,annual,2024-12-31,false,2026-05-20,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,UBL Annual Report 2024,https://www.ubl.com.pk/investor-relations/annual-reports,,annual_report,true,PENDING,,pilot_batch_1_2026_05,needs_verification,Awaiting data entry from annual report
+UBL,FY23,annual,2023-12-31,false,2024-01-31,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,UBL Annual Report 2023,https://www.ubl.com.pk/investor-relations/annual-reports,,annual_report,true,PENDING,,pilot_batch_1_2026_05,needs_verification,Awaiting data entry from annual report
+UBL,FY22,annual,2022-12-31,false,2023-01-31,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,UBL Annual Report 2022,https://www.ubl.com.pk/investor-relations/annual-reports,,annual_report,true,PENDING,,pilot_batch_1_2026_05,needs_verification,Awaiting data entry from annual report
+# BAFL FY24
+BAFL,FY24,annual,2024-12-31,false,2026-05-20,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,BAFL Annual Report 2024,https://bankalfalah.com/investor-relations,,annual_report,true,PENDING,,pilot_batch_1_2026_05,needs_verification,Awaiting data entry from annual report
+BAFL,FY23,annual,2023-12-31,false,2024-01-31,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,BAFL Annual Report 2023,https://bankalfalah.com/investor-relations,,annual_report,true,PENDING,,pilot_batch_1_2026_05,needs_verification,Awaiting data entry from annual report
+BAFL,FY22,annual,2022-12-31,false,2023-01-31,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,BAFL Annual Report 2022,https://bankalfalah.com/investor-relations,,annual_report,true,PENDING,,pilot_batch_1_2026_05,needs_verification,Awaiting data entry from annual report
+# ── E&P (FY24 = Jul 2023–Jun 2024 | FY end Jun 30) ────────────────────────────────────────────────
+OGDC,FY24,annual,2024-06-30,false,2026-05-20,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,OGDC Annual Report FY2024,https://www.ogdcl.com/investor-relations/annual-reports,,annual_report,true,PENDING,,pilot_batch_1_2026_05,needs_verification,Awaiting data entry from annual report
+OGDC,FY23,annual,2023-06-30,false,2023-07-31,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,OGDC Annual Report FY2023,https://www.ogdcl.com/investor-relations/annual-reports,,annual_report,true,PENDING,,pilot_batch_1_2026_05,needs_verification,Awaiting data entry from annual report
+OGDC,FY22,annual,2022-06-30,false,2022-07-31,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,OGDC Annual Report FY2022,https://www.ogdcl.com/investor-relations/annual-reports,,annual_report,true,PENDING,,pilot_batch_1_2026_05,needs_verification,Awaiting data entry from annual report
+PPL,FY24,annual,2024-06-30,false,2026-05-20,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,PPL Annual Report FY2024,https://www.ppl.com.pk/investor-relations,,annual_report,true,PENDING,,pilot_batch_1_2026_05,needs_verification,Awaiting data entry from annual report
+PPL,FY23,annual,2023-06-30,false,2023-07-31,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,PPL Annual Report FY2023,https://www.ppl.com.pk/investor-relations,,annual_report,true,PENDING,,pilot_batch_1_2026_05,needs_verification,Awaiting data entry from annual report
+PPL,FY22,annual,2022-06-30,false,2022-07-31,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,PPL Annual Report FY2022,https://www.ppl.com.pk/investor-relations,,annual_report,true,PENDING,,pilot_batch_1_2026_05,needs_verification,Awaiting data entry from annual report
+# ── CEMENT (FY24 = Jul 2023–Jun 2024 | FY end Jun 30) ─────────────────────────────────────────────
+LUCK,FY24,annual,2024-06-30,false,2026-05-20,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Lucky Cement Annual Report FY2024,https://www.luckycement.com/investor-relations,,annual_report,true,PENDING,,pilot_batch_1_2026_05,needs_verification,Awaiting data entry from annual report
+LUCK,FY23,annual,2023-06-30,false,2023-07-31,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Lucky Cement Annual Report FY2023,https://www.luckycement.com/investor-relations,,annual_report,true,PENDING,,pilot_batch_1_2026_05,needs_verification,Awaiting data entry from annual report
+LUCK,FY22,annual,2022-06-30,false,2022-07-31,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Lucky Cement Annual Report FY2022,https://www.luckycement.com/investor-relations,,annual_report,true,PENDING,,pilot_batch_1_2026_05,needs_verification,Awaiting data entry from annual report
+DGKC,FY24,annual,2024-06-30,false,2026-05-20,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,DGKC Annual Report FY2024,https://www.dgcement.com/investor-relations,,annual_report,true,PENDING,,pilot_batch_1_2026_05,needs_verification,Awaiting data entry from annual report
+DGKC,FY23,annual,2023-06-30,false,2023-07-31,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,DGKC Annual Report FY2023,https://www.dgcement.com/investor-relations,,annual_report,true,PENDING,,pilot_batch_1_2026_05,needs_verification,Awaiting data entry from annual report
+DGKC,FY22,annual,2022-06-30,false,2022-07-31,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,DGKC Annual Report FY2022,https://www.dgcement.com/investor-relations,,annual_report,true,PENDING,,pilot_batch_1_2026_05,needs_verification,Awaiting data entry from annual report
+# ── FERTILISER (FY24 = Jan–Dec 2024 | FY end Dec 31) ──────────────────────────────────────────────
+FFC,FY24,annual,2024-12-31,false,2026-05-20,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,FFC Annual Report 2024,https://ffc.com.pk/investor-relations,,annual_report,true,PENDING,,pilot_batch_1_2026_05,needs_verification,Awaiting data entry from annual report
+FFC,FY23,annual,2023-12-31,false,2024-01-31,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,FFC Annual Report 2023,https://ffc.com.pk/investor-relations,,annual_report,true,PENDING,,pilot_batch_1_2026_05,needs_verification,Awaiting data entry from annual report
+FFC,FY22,annual,2022-12-31,false,2023-01-31,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,FFC Annual Report 2022,https://ffc.com.pk/investor-relations,,annual_report,true,PENDING,,pilot_batch_1_2026_05,needs_verification,Awaiting data entry from annual report
+# ── POWER/IPP (FY24 = Jul 2023–Jun 2024 | FY end Jun 30) ─────────────────────────────────────────
+HUBC,FY24,annual,2024-06-30,false,2026-05-20,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,HUBC Annual Report FY2024,https://www.hubpower.com/investor-relations,,annual_report,true,PENDING,,pilot_batch_1_2026_05,needs_verification,Awaiting data entry from annual report
+HUBC,FY23,annual,2023-06-30,false,2023-07-31,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,HUBC Annual Report FY2023,https://www.hubpower.com/investor-relations,,annual_report,true,PENDING,,pilot_batch_1_2026_05,needs_verification,Awaiting data entry from annual report
+HUBC,FY22,annual,2022-06-30,false,2022-07-31,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,HUBC Annual Report FY2022,https://www.hubpower.com/investor-relations,,annual_report,true,PENDING,,pilot_batch_1_2026_05,needs_verification,Awaiting data entry from annual report
