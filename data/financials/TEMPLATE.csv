@@ -1,0 +1,21 @@
+# AHM Financial Data Template — v1.0.0
+# =====================================================================
+# UNIT STANDARDS:
+#   All income statement / balance sheet / cash flow fields: PKR MILLIONS
+#   All per-share fields (price, eps, dps, bvps): PKR per share
+#   shares_outstanding: millions of shares (from company filings — NOT back-calculated)
+#   All percentages stored as raw numbers (e.g. 14.5 not 0.145)
+#   Dates: YYYY-MM-DD
+#
+# REQUIRED FIELDS: symbol, period_key, period_end, snapshot_date,
+#   price, shares_outstanding, revenue, pat, eps, total_assets, total_equity
+#
+# LEAVE BLANK (not zero) for unavailable data. Zero means actual zero.
+# N/A, null, - are all treated as blank.
+#
+# period_key examples: FY24, FY23, FY22, H1FY25, Q3FY25
+# period_type: annual | half_year | quarter | ttm
+# =====================================================================
+symbol,period_key,period_type,period_end,is_ttm,snapshot_date,price,shares_outstanding,revenue,gross_profit,ebitda,ebit,interest_expense,pat,eps,total_assets,total_equity,total_debt,cash_equivalents,current_assets,current_liabilities,cfo,capex,dps,prev_revenue,prev_pat,prev_eps,revenue_3y_ago,pat_3y_ago,eps_3y_ago,net_interest_income,total_deposits,casa_deposits,gross_loans,non_performing_loans,loan_loss_provisions,tier1_capital,risk_weighted_assets,total_income_banking,operating_expenses,production_boepd,reserves_mmboe,prev_production_boepd,installed_capacity_mw,receivables
+# Example (REMOVE before use):
+# HBL,FY24,annual,2024-12-31,false,2026-05-20,269.49,1316.59,368432,,,52121,12450,52121,37.5,3856721,360254,,45230,,,28954,8230,7,313789,39238,28.3,248563,27891,20.1,181234,2456789,1750412,1987654,115283,98291,387234,1876543,281456,156234,,,,,

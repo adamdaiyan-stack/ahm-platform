@@ -11,6 +11,7 @@
     "ingest:index": "tsx --env-file=.env.local scripts/pipelines/ingest-kse-index.ts",
     "sync:snapshots": "tsx --env-file=.env.local scripts/pipelines/sync-company-snapshots.ts",
     "sync:market-index": "tsx --env-file=.env.local scripts/pipelines/sync-market-index.ts",
+    "ingest:financials": "tsx --env-file=.env.local scripts/pipelines/ingest-financial-data.ts",
     "build:daily-snapshots": "tsx --env-file=.env.local scripts/pipelines/build-daily-snapshots.ts",
     "pipeline:all": "npm run ingest:prices && npm run sync:snapshots && npm run sync:market-index && npm run build:daily-snapshots",
     "debug:connector": "tsx --env-file=.env.local scripts/connectors/dps-psx.ts",
