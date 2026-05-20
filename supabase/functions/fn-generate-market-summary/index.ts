@@ -226,8 +226,8 @@ Deno.serve(async (req: Request) => {
 
     // Substitutions aligned to market_summary template variables
     const baseSubstitutions: Record<string, string> = {
-      snapshot_date,
-      snapshot_type,
+      snapshot_date: today,
+      snapshot_type:
       kse100_level:   idx ? idx.level.toLocaleString() : 'N/A',
       kse100_change_pct: idx ? (idx.change_percent >= 0 ? '+' : '') + idx.change_percent.toFixed(2) : 'N/A',
       market_volume:  idx?.volume ? (idx.volume / 1e9).toFixed(2) + 'B' : 'N/A',
@@ -288,7 +288,7 @@ Deno.serve(async (req: Request) => {
       output_types:  ['market_summary', 'alert_summary'],
       total_tokens:  longResult.promptTokens + longResult.completionTokens + shortResult.promptTokens + shortResult.completionTokens,
       generation_ms: longResult.generationMs + shortResult.generationMs,
-    }).catch((e: Error) => console.warn('ai_generation_jobs insert failed:', e.message));
+    }).then(({ error }: { error: Error | null }) => { if (error) console.warn('ai_generation_jobs insert failed:', error.message); });
 
     return new Response(
       JSON.stringify({

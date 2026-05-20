@@ -361,7 +361,7 @@ Deno.serve(async (req: Request) => {
       output_types:          ['company_narrative', 'conviction_interpretation'],
       total_tokens:          totalTokens,
       generation_ms:         narrativeResult.generationMs + convictionResult.generationMs,
-    }).catch((e: Error) => console.warn('ai_generation_jobs insert failed:', e.message));
+    }).then(({ error }: { error: Error | null }) => { if (error) console.warn('ai_generation_jobs insert failed:', error.message); });
 
     return new Response(
       JSON.stringify({
