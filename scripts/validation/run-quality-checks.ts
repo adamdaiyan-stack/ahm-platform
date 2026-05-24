@@ -245,6 +245,56 @@ async function checkIndexData(runDate: string): Promise<CheckResult> {
   };
 }
 
+async function checkConvictionStaleness(): Promise<CheckResult> {
+  // Count current scores and find the most recent scored_at
+  const { count, error: countErr } = await supabaseAdmin
+    .from("conviction_scores")
+    .select("*", { count: "exact", head: true })
+    .eq("is_current", true);
+
+  if (countErr) {
+    return { check: "Conviction Scores", status: "WARN", detail: `Could not query conviction_scores: ${countErr.message}` };
+  }
+
+  const n = count ?? 0;
+
+  if (n === 0) {
+    return {
+      check:  "Conviction Scores",
+      status: "WARN",
+      detail: "No conviction scores found. Run npm run score:companies to populate the conviction board.",
+    };
+  }
+
+  // Find the most recent scored_at among current rows
+  const { data: latestRow } = await supabaseAdmin
+    .from("conviction_scores")
+    .select("scored_at")
+    .eq("is_current", true)
+    .order("scored_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  if (!latestRow) {
+    return { check: "Conviction Scores", status: "WARN", detail: "Could not determine most recent scoring run." };
+  }
+
+  type ScoredRow = { scored_at: string };
+  const lastScoredAt = new Date((latestRow as ScoredRow).scored_at);
+  const ageHours     = (Date.now() - lastScoredAt.getTime()) / 3_600_000;
+
+  const detail = `${n} companies scored. Last run: ${lastScoredAt.toISOString().slice(0, 16)}Z (${ageHours.toFixed(1)}h ago).`;
+
+  if (ageHours > 48) {
+    return { check: "Conviction Scores", status: "FAIL", detail: `${detail} Scores more than 48h stale — re-run score:companies.` };
+  }
+  if (ageHours > 25) {
+    return { check: "Conviction Scores", status: "WARN", detail: `${detail} Nightly scoring may have missed a run.` };
+  }
+
+  return { check: "Conviction Scores", status: "PASS", detail };
+}
+
 async function checkRegimeStaleness(runDate: string): Promise<CheckResult> {
   const { data, error } = await supabaseAdmin
     .from("market_regime_states")
@@ -301,6 +351,7 @@ async function main(): Promise<void> {
     checkPipelineFailures(),
     checkZeroVolumeAnomalies(runDate),
     checkIndexData(runDate),
+    checkConvictionStaleness(),
     checkRegimeStaleness(runDate),
   ]);
 

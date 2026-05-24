@@ -246,12 +246,55 @@ async function scoreCompany(
   return computeConvictionScore(inputs, pctRanks);
 }
 
+// ---- Tier ordering (for upgrade / downgrade detection) ----------------------
+
+const TIER_ORDER: Record<string, number> = {
+  HIGH_CONVICTION: 4,
+  MODERATE:        3,
+  WATCHLIST:       2,
+  MONITOR:         1,
+};
+
 // ---- Persistence ------------------------------------------------------------
 
-async function persistScore(db: ReturnType<typeof getDb>, result: ConvictionScoreResult): Promise<void> {
-  await db.from('conviction_scores').update({ is_current: false }).eq('symbol', result.symbol).eq('is_current', true);
+async function persistScore(
+  db:            ReturnType<typeof getDb>,
+  result:        ConvictionScoreResult,
+  triggerReason: string = 'scheduled',
+): Promise<void> {
+  const { symbol } = result;
 
-  const row = {
+  // Query previous current row for tier-transition tracking
+  const { data: prevRow } = await db
+    .from('conviction_scores')
+    .select('score, tier')
+    .eq('symbol', symbol)
+    .eq('is_current', true)
+    .maybeSingle();
+
+  const prevScore = (prevRow as any)?.score ?? null;
+  const prevTier  = (prevRow as any)?.tier  ?? null;
+
+  const tierChanged = prevTier !== null && prevTier !== result.tier;
+  let tierDirection: 'upgrade' | 'downgrade' | null = null;
+  if (tierChanged && prevTier !== null) {
+    const prevOrd = TIER_ORDER[prevTier] ?? 0;
+    const newOrd  = TIER_ORDER[result.tier] ?? 0;
+    tierDirection = newOrd > prevOrd ? 'upgrade' : 'downgrade';
+  }
+
+  // Mark old row as historical
+  if (prevRow) {
+    await db
+      .from('conviction_scores')
+      .update({ is_current: false })
+      .eq('symbol', symbol)
+      .eq('is_current', true);
+  }
+
+  const scoredAt = result.scored_at.toISOString();
+
+  const scoreRow = {
     symbol:          result.symbol,
     score:           result.score,
     tier:            result.tier,
@@ -261,13 +304,28 @@ async function persistScore(db: ReturnType<typeof getDb>, result: ConvictionScor
     inputs_snapshot: result.inputs_snapshot,
     score_version:   result.score_version,
     is_current:      true,
-    scored_at:       result.scored_at.toISOString(),
+    scored_at:       scoredAt,
   };
 
-  const { error: insertErr } = await db.from('conviction_scores').insert(row);
+  const { error: insertErr } = await db.from('conviction_scores').insert(scoreRow);
   if (insertErr) throw new Error('conviction_scores insert failed: ' + insertErr.message);
 
-  await db.from('conviction_score_history').insert({ ...row, is_current: undefined });
+  // Append to history with full tier-transition context
+  await db.from('conviction_score_history').insert({
+    symbol:          result.symbol,
+    score:           result.score,
+    tier:            result.tier,
+    previous_score:  prevScore,
+    previous_tier:   prevTier,
+    tier_changed:    tierChanged,
+    tier_direction:  tierDirection,
+    sub_scores:      result.sub_scores,
+    data_confidence: result.data_confidence,
+    inputs_snapshot: result.inputs_snapshot,
+    score_version:   result.score_version,
+    scored_at:       scoredAt,
+    trigger_reason:  triggerReason,
+  });
 }
 
 // ---- HTTP handler -----------------------------------------------------------

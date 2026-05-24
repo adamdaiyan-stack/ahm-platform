@@ -32,7 +32,9 @@
     "audit:financials": "tsx --env-file=.env.local scripts/validation/audit-financials.ts",
     "pipeline:financials": "npm run audit:financials && npm run calc:ratios && npm run compute:peers",
     "audit:quality": "tsx --env-file=.env.local scripts/validation/run-quality-checks.ts",
-    "audit:quality:json": "tsx --env-file=.env.local scripts/validation/run-quality-checks.ts --json"
+    "audit:quality:json": "tsx --env-file=.env.local scripts/validation/run-quality-checks.ts --json",
+    "score:companies": "tsx --env-file=.env.local scripts/pipelines/score-all-companies.ts",
+    "score:company": "tsx --env-file=.env.local scripts/pipelines/score-all-companies.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",
