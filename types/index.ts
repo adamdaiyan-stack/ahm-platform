@@ -443,6 +443,27 @@ export type MarketIndex = {
   updated_at:     string;
 };
 
+// ─── Market Regime ────────────────────────────────────────────────────────────
+export type RegimeLabel =
+  | "Bullish"
+  | "Risk-On"
+  | "Neutral"
+  | "Defensive"
+  | "Risk-Off"
+  | "High Volatility";
+
+export type MarketRegimeState = {
+  id:           string;
+  regime_date:  string;
+  regime:       RegimeLabel;
+  confidence:   number;
+  inputs:       Record<string, unknown>;
+  regime_note:  string | null;
+  computed_by:  string;
+  computed_at:  string;
+  created_at:   string;
+};
+
 // ─── Sector Stats (computed, not a DB table) ──────────────────────────────────
 export type SectorStat = {
   sector:         string;

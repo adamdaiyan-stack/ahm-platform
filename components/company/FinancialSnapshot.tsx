@@ -6,6 +6,10 @@
 
 import { SectionLabel } from "./InvestmentThesis";
 import type { FinancialMetrics } from "@/types";
+import ChartWrapper from "@/components/ui/charts/ChartWrapper";
+import FinancialBarChart from "@/components/ui/charts/FinancialBarChart";
+import FinancialLineChart from "@/components/ui/charts/FinancialLineChart";
+import type { MetricConfig } from "@/components/ui/charts/FinancialLineChart";
 
 type MetricRowProps = {
   label:   string;
@@ -146,6 +150,130 @@ export default function FinancialSnapshot({ latest, history }: FinancialSnapshot
           </div>
         </div>
       )}
+
+      {/* Financial Trends — charts shown when ≥3 periods of data are available */}
+      {history.length >= 3 && (() => {
+        const fmtBnChart = (v: number) => {
+          const abs = Math.abs(v);
+          if (abs >= 1_000_000_000) return (v / 1_000_000_000).toFixed(1) + "B";
+          if (abs >= 1_000_000)     return (v / 1_000_000).toFixed(1) + "M";
+          return v.toFixed(0);
+        };
+
+        const hasRevenue = history.some((h) => h.revenue != null);
+        const hasPAT     = history.some((h) => h.pat     != null);
+        const hasEPS     = history.some((h) => h.eps     != null);
+        const hasMargins = history.some((h) => h.net_margin != null || h.gross_margin != null || h.ebitda_margin != null);
+        const hasROE     = history.some((h) => h.roe != null);
+        const hasNIM     = history.some((h) => h.nim != null);
+
+        // Build margin/return metrics dynamically — only include series that have data
+        const ratioMetrics: MetricConfig[] = [];
+        if (history.some((h) => h.gross_margin  != null)) ratioMetrics.push({ key: "gross_margin",  label: "Gross" });
+        if (history.some((h) => h.ebitda_margin != null)) ratioMetrics.push({ key: "ebitda_margin", label: "EBITDA" });
+        if (history.some((h) => h.net_margin    != null)) ratioMetrics.push({ key: "net_margin",    label: "Net" });
+        if (ratioMetrics.length === 0 && hasROE)          ratioMetrics.push({ key: "roe", label: "ROE" });
+
+        const showAnyBar  = hasRevenue || hasPAT || hasEPS;
+        const showAnyLine = ratioMetrics.length > 0 || hasNIM;
+
+        if (!showAnyBar && !showAnyLine) return null;
+
+        return (
+          <div className="mt-4 space-y-4">
+            {/* Revenue & PAT bars */}
+            {(hasRevenue || hasPAT) && (
+              <div className="bg-surface border border-border-theme rounded-xl p-5">
+                <p className="text-xs font-mono text-tx-disabled uppercase tracking-widest mb-4">
+                  Revenue &amp; Profit History
+                </p>
+                <div className={`grid gap-4 ${hasRevenue && hasPAT ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"}`}>
+                  {hasRevenue && (
+                    <div>
+                      <p className="text-xs text-tx-disabled font-mono mb-2">Revenue</p>
+                      <ChartWrapper height={160} empty={!hasRevenue}>
+                        <FinancialBarChart
+                          data={history}
+                          metric="revenue"
+                          label="Revenue"
+                          formatter={fmtBnChart}
+                        />
+                      </ChartWrapper>
+                    </div>
+                  )}
+                  {hasPAT && (
+                    <div>
+                      <p className="text-xs text-tx-disabled font-mono mb-2">PAT (Profit After Tax)</p>
+                      <ChartWrapper height={160} empty={!hasPAT}>
+                        <FinancialBarChart
+                          data={history}
+                          metric="pat"
+                          label="PAT"
+                          formatter={fmtBnChart}
+                        />
+                      </ChartWrapper>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* EPS bar */}
+            {hasEPS && (
+              <div className="bg-surface border border-border-theme rounded-xl p-5">
+                <p className="text-xs font-mono text-tx-disabled uppercase tracking-widest mb-4">
+                  EPS Trend
+                </p>
+                <ChartWrapper height={160} empty={!hasEPS}>
+                  <FinancialBarChart
+                    data={history}
+                    metric="eps"
+                    label="EPS (PKR)"
+                    formatter={(v) => "PKR " + v.toFixed(2)}
+                  />
+                </ChartWrapper>
+              </div>
+            )}
+
+            {/* Margin / ratio lines */}
+            {(ratioMetrics.length > 0 || hasNIM) && (
+              <div className="bg-surface border border-border-theme rounded-xl p-5">
+                <p className="text-xs font-mono text-tx-disabled uppercase tracking-widest mb-4">
+                  {hasNIM ? "Margin & Banking Ratios" : "Margin Trends"}
+                </p>
+                <div className={`grid gap-4 ${(ratioMetrics.length > 0 && hasNIM) ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"}`}>
+                  {ratioMetrics.length > 0 && (
+                    <div>
+                      {ratioMetrics.length > 1 && (
+                        <p className="text-xs text-tx-disabled font-mono mb-2">Margins</p>
+                      )}
+                      <ChartWrapper height={160} empty={ratioMetrics.length === 0}>
+                        <FinancialLineChart
+                          data={history}
+                          metrics={ratioMetrics}
+                          unit="%"
+                        />
+                      </ChartWrapper>
+                    </div>
+                  )}
+                  {hasNIM && (
+                    <div>
+                      <p className="text-xs text-tx-disabled font-mono mb-2">Net Interest Margin</p>
+                      <ChartWrapper height={160} empty={!hasNIM}>
+                        <FinancialLineChart
+                          data={history}
+                          metrics={[{ key: "nim", label: "NIM", color: "#3b82f6" }]}
+                          unit="%"
+                        />
+                      </ChartWrapper>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* History strip */}
       {history.length > 1 && (

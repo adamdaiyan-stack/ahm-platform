@@ -1,9 +1,9 @@
 // services/api/market.ts
-// All market-level data queries — index, movers, sector performance.
+// All market-level data queries — index, movers, sector performance, regime.
 // Components must import from here, never call supabase directly.
 
 import { supabase } from "@/lib/supabase";
-import type { MarketIndex, CompanyMover, CompanyActive, SectorStat } from "@/types";
+import type { MarketIndex, CompanyMover, CompanyActive, SectorStat, MarketRegimeState } from "@/types";
 
 // ─── KSE-100 Index ────────────────────────────────────────────────────────────
 export async function getKSE100Index(): Promise<MarketIndex | null> {
@@ -82,6 +82,29 @@ export async function getSectorPerformance(): Promise<SectorStat[]> {
     .sort((a, b) => b.totalMarketCap - a.totalMarketCap);
 }
 
+// ─── Market Regime ────────────────────────────────────────────────────────────
+
+/**
+ * Fetches the most recent market regime classification.
+ * Returns null if no regime has been computed yet (before first pipeline run).
+ */
+export async function getLatestRegime(): Promise<MarketRegimeState | null> {
+  const { data, error } = await supabase
+    .from("market_regime_states")
+    .select("*")
+    .order("regime_date", { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error) {
+    // Table may not exist yet (migration pending) — silent null
+    if (error.code === "PGRST116" || error.message?.includes("does not exist")) return null;
+    console.error("[market] getLatestRegime:", error.message);
+    return null;
+  }
+  return data as MarketRegimeState;
+}
+
 // ─── Convenience: everything the market page needs in one call ─────────────────
 export type MarketPageData = {
   index:   MarketIndex | null;
@@ -89,15 +112,17 @@ export type MarketPageData = {
   losers:  CompanyMover[];
   active:  CompanyActive[];
   sectors: SectorStat[];
+  regime:  MarketRegimeState | null;
 };
 
 export async function getMarketPageData(): Promise<MarketPageData> {
-  const [index, gainers, losers, active, sectors] = await Promise.all([
+  const [index, gainers, losers, active, sectors, regime] = await Promise.all([
     getKSE100Index(),
     getTopGainers(5),
     getTopLosers(5),
     getMostActive(5),
     getSectorPerformance(),
+    getLatestRegime(),
   ]);
-  return { index, gainers, losers, active, sectors };
+  return { index, gainers, losers, active, sectors, regime };
 }

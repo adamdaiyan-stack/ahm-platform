@@ -5,6 +5,9 @@ import { getFinancialHistory }                 from "@/services/api/fundamentals
 import { getStockFinancialData }               from "@/services/api/financials";
 import { getReportsByTicker }                  from "@/services/api/research";
 import { getConvictionScore }                  from "@/services/api/intelligence";
+import { getPriceHistory }                     from "@/services/api/prices";
+import ChartWrapper                            from "@/components/ui/charts/ChartWrapper";
+import PriceChart                              from "@/components/ui/charts/PriceChart";
 import { ConvictionBadge }                     from "@/components/intelligence/ConvictionBadge";
 import { AICompanyNarrative }                from "@/components/ai/AICompanyNarrative";
 import { AlertsFeed }                        from "@/components/alerts/AlertsFeed";
@@ -145,13 +148,14 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
     );
   }
 
-  const [peers, { dividends, announcements }, metrics, reports, financialData, convictionScore] = await Promise.all([
+  const [peers, { dividends, announcements }, metrics, reports, financialData, convictionScore, priceHistory] = await Promise.all([
     getCompanyPeers(company.sector, sym, 6),
     getStockCorporateData(sym),
     getFinancialHistory(sym, 8),
     getReportsByTicker(sym, 4),
     getStockFinancialData(sym),
     getConvictionScore(sym),
+    getPriceHistory(sym, 90),
   ]);
 
   // ── Company intelligence routing ──────────────────────────────────────────
@@ -402,17 +406,17 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
           )}
         </section>
 
-        {/* PRICE CHART PLACEHOLDER */}
+        {/* PRICE CHART */}
         <section>
           <SectionLabel>Price History</SectionLabel>
-          <div className="bg-surface border border-border-theme rounded-xl flex flex-col items-center justify-center p-8" style={{ minHeight: "200px" }}>
-            <svg width="100%" height="80" viewBox="0 0 600 80" className="mb-5 opacity-10" preserveAspectRatio="none">
-              <polyline points="0,70 80,52 160,58 240,35 300,40 380,22 460,18 540,12 600,6"
-                fill="none" stroke="var(--gain)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            <p className="text-tx-disabled text-sm font-mono">Price chart integration pending</p>
-            <p className="text-tx-disabled text-xs mt-1 opacity-60">Historical OHLCV data pipeline in progress</p>
-          </div>
+          <ChartWrapper
+            height={280}
+            empty={priceHistory.length === 0}
+            emptyMessage="Price chart integration pending"
+            emptySubMessage="Historical OHLCV data pipeline in progress"
+          >
+            <PriceChart data={priceHistory} />
+          </ChartWrapper>
         </section>
 
         {/* DIVIDENDS + ANNOUNCEMENTS */}

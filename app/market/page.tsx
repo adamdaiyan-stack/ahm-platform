@@ -25,6 +25,8 @@ import { getPublishedReports }  from "@/services/api";
 import { getMarketStatus }      from "@/lib/market";
 import { formatVolume }         from "@/lib/formatters";
 import StatCard                 from "@/components/ui/StatCard";
+import RegimeIndicator          from "@/components/ui/RegimeIndicator";
+import type { RegimeLabel }     from "@/types";
 
 // Dashboard components
 import MarketHero               from "@/components/dashboard/MarketHero";
@@ -41,7 +43,7 @@ export default async function MarketPage() {
   const status = getMarketStatus();
 
   // Parallel data fetch — all independent
-  const [{ index, gainers, losers, active, sectors: sectorStats }, sectors, reports] =
+  const [{ index, gainers, losers, active, sectors: sectorStats, regime }, sectors, reports] =
     await Promise.all([
       getMarketPageData(),
       getAllSectors(),
@@ -58,7 +60,7 @@ export default async function MarketPage() {
 
       {/* ── STATS STRIP ──────────────────────────────────────────────── */}
       <div className="px-6 md:px-8 py-5 border-b border-border-theme">
-        <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-5 gap-3">
           <StatCard
             size="lg"
             label="Total Volume"
@@ -81,6 +83,21 @@ export default async function MarketPage() {
             label="Unchanged"
             value={idx?.unchanged != null ? String(idx.unchanged) : "—"}
           />
+          {/* Regime indicator — silently absent until first pipeline run */}
+          {regime ? (
+            <RegimeIndicator
+              regime={regime.regime as RegimeLabel}
+              note={regime.regime_note ?? undefined}
+              confidence={regime.confidence}
+            />
+          ) : (
+            <StatCard
+              size="lg"
+              label="Market Regime"
+              value="—"
+              sub="Awaiting pipeline"
+            />
+          )}
         </div>
       </div>
 
