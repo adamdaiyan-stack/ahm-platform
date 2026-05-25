@@ -114,11 +114,15 @@ export function renderTemplate(template: string, subs: Record<string, string>): 
 
 // ---- Quality checks ---------------------------------------------------------
 
+// "reduce" removed from buy_sell_hold — it appears legitimately in financial analysis
+// (e.g. "reduce NPLs", "reduce costs", "reduce debt") and causes false positives.
+// "avoid" and "exit" removed for the same reason (editorial, not recommendation language).
+// Core recommendation verbs retained: buy, sell, hold, accumulate.
 const PROHIBITED: { name: string; re: RegExp; severity: 'failed' | 'warning' }[] = [
-  { name: 'buy_sell_hold',         re: /\b(buy|sell|hold|accumulate|reduce|avoid|exit)\b/gi, severity: 'failed' },
+  { name: 'buy_sell_hold',         re: /\b(buy|sell|hold|accumulate)\b/gi, severity: 'failed' },
   { name: 'price_target',          re: /\b(price target|fair value|target price|intrinsic value)\b/gi, severity: 'failed' },
   { name: 'return_prediction',     re: /\b(will return|expected return|upside potential of \d+%)\b/gi, severity: 'failed' },
-  { name: 'promotional',           re: /\b(best|top pick|strong buy|outperform|conviction buy|highly recommend)\b/gi, severity: 'failed' },
+  { name: 'promotional',           re: /\b(top pick|strong buy|outperform|conviction buy|highly recommend)\b/gi, severity: 'failed' },
   { name: 'placeholder_text',      re: /\[data unavailable\]|\[insert\]|\[tbd\]|\{\{[^}]+\}\}/gi, severity: 'failed' },
   { name: 'pkr_price_target',      re: /PKR\s+\d[\d,.]*/gi, severity: 'warning' },
 ];
@@ -280,14 +284,15 @@ export async function generate(
     throw new Error(`ai_outputs insert failed: ${insertErr?.message}`);
   }
 
-  // 9. Log quality check results
-  await db.from('ai_quality_checks').insert({
-    output_id:      newRow.id,
-    overall_status: quality.status,
-    checks_run:     quality.checks,
-    violations:     quality.violations,
+  // 9. Log quality check results (non-fatal — warn but don't block)
+  const { error: qcErr } = await db.from('ai_quality_checks').insert({
+    output_id:       newRow.id,
+    overall_status:  quality.status,
+    checks_run:      quality.checks,
+    violations:      quality.violations,
     requires_review: quality.violations.some((v: any) => v.status === 'failed'),
-  }).then(({ error }: { error: Error | null }) => { if (error) console.warn('quality check log failed:', error.message); });
+  });
+  if (qcErr) console.warn(`[ai-generator] quality check log failed for ${referenceKey}: ${qcErr.message}`);
 
   return {
     outputId:         newRow.id,

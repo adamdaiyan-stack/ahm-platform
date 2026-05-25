@@ -34,7 +34,10 @@
     "audit:quality": "tsx --env-file=.env.local scripts/validation/run-quality-checks.ts",
     "audit:quality:json": "tsx --env-file=.env.local scripts/validation/run-quality-checks.ts --json",
     "score:companies": "tsx --env-file=.env.local scripts/pipelines/score-all-companies.ts",
-    "score:company": "tsx --env-file=.env.local scripts/pipelines/score-all-companies.ts"
+    "score:company": "tsx --env-file=.env.local scripts/pipelines/score-all-companies.ts",
+    "generate:narratives": "tsx --env-file=.env.local scripts/pipelines/generate-all-narratives.ts",
+    "generate:narrative": "tsx --env-file=.env.local scripts/pipelines/generate-all-narratives.ts",
+    "generate:market": "tsx --env-file=.env.local scripts/pipelines/generate-all-narratives.ts --market"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",

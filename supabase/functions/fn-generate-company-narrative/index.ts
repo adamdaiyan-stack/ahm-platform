@@ -303,12 +303,16 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    let symbol = '';
+    let symbol    = '';
+    let forceFlag = false;
     if (req.method === 'GET') {
-      symbol = new URL(req.url).searchParams.get('symbol') ?? '';
+      const u = new URL(req.url);
+      symbol    = u.searchParams.get('symbol') ?? '';
+      forceFlag = u.searchParams.get('force') === 'true';
     } else {
       const body = await req.json().catch(() => ({}));
-      symbol = body?.symbol ?? '';
+      symbol    = body?.symbol ?? '';
+      forceFlag = body?.force  === true;
     }
 
     symbol = symbol.trim().toUpperCase();
@@ -337,18 +341,20 @@ Deno.serve(async (req: Request) => {
 
     const narrativeSubs   = buildNarrativeSubstitutions(ctx, symbol);
     const narrativeResult = await generate(db, {
-      outputType:    'company_narrative',
-      referenceKey:  symbol,
-      substitutions: narrativeSubs,
+      outputType:      'company_narrative',
+      referenceKey:    symbol,
+      substitutions:   narrativeSubs,
       inputSnapshot,
+      forceRegenerate: forceFlag,
     });
 
     const convictionSubs   = buildConvictionSubstitutions(ctx, symbol);
     const convictionResult = await generate(db, {
-      outputType:    'conviction_interpretation',
-      referenceKey:  symbol,
-      substitutions: convictionSubs,
+      outputType:      'conviction_interpretation',
+      referenceKey:    symbol,
+      substitutions:   convictionSubs,
       inputSnapshot,
+      forceRegenerate: forceFlag,
     });
 
     const totalTokens =

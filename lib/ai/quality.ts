@@ -29,10 +29,14 @@ export type QualityReport = {
 
 // ---- Prohibited language patterns ------------------------------------------
 
+// "reduce", "avoid", "exit", and "enter" removed from buy_sell_hold — these words
+// appear legitimately in financial analysis ("reduce NPLs", "reduce costs",
+// "to avoid excessive leverage", "exit the reporting period") and caused false positives.
+// Core recommendation verbs retained: buy, sell, hold, accumulate.
 const PROHIBITED_PATTERNS: { name: string; pattern: RegExp; severity: 'failed' | 'warning' }[] = [
   {
     name:     'buy_sell_hold',
-    pattern:  /\b(buy|sell|hold|accumulate|reduce|avoid|exit|enter)\b/gi,
+    pattern:  /\b(buy|sell|hold|accumulate)\b/gi,
     severity: 'failed',
   },
   {
@@ -52,7 +56,7 @@ const PROHIBITED_PATTERNS: { name: string; pattern: RegExp; severity: 'failed' |
   },
   {
     name:     'promotional_superlatives',
-    pattern:  /\b(best|top pick|strong buy|outperform|conviction buy|highly recommend)\b/gi,
+    pattern:  /\b(top pick|strong buy|outperform|conviction buy|highly recommend)\b/gi,
     severity: 'failed',
   },
   {

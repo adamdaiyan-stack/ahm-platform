@@ -145,14 +145,20 @@ async function writeMarketSnapshot(
   inputSnapshot: Record<string, unknown>,
   structuredContent: Record<string, unknown>,
 ): Promise<void> {
-  await db.from('ai_market_snapshots')
+  // Retire any existing current row for this date/type/format
+  const { error: retireErr } = await db.from('ai_market_snapshots')
     .update({ is_current: false })
     .eq('snapshot_date', snapshot_date)
     .eq('snapshot_type', snapshot_type)
     .eq('format', format)
     .eq('is_current', true);
 
-  await db.from('ai_market_snapshots').insert({
+  if (retireErr) {
+    console.warn(`[fn-generate-market-summary] retire ${format} failed: ${retireErr.message}`);
+  }
+
+  // Insert new current row — throw on failure so the caller surfaces the error
+  const { error: insertErr } = await db.from('ai_market_snapshots').insert({
     snapshot_date,
     snapshot_type,
     format,
@@ -160,15 +166,17 @@ async function writeMarketSnapshot(
     structured_content: structuredContent,
     input_snapshot:     inputSnapshot,
     model_version:      'claude-sonnet-4-6',
-    prompt_version:     'v1.0.0',
+    prompt_version:     '1.0.0',
     prompt_tokens:      promptTokens,
     completion_tokens:  completionTokens,
     total_tokens:       promptTokens + completionTokens,
     generation_ms:      generationMs,
     is_current:         true,
-  }).then(({ error }: { error: Error | null }) => {
-    if (error) console.error('ai_market_snapshots insert error:', error.message);
   });
+
+  if (insertErr) {
+    throw new Error(`ai_market_snapshots insert (${format}) failed: ${insertErr.message}`);
+  }
 }
 
 // ---- Main handler -----------------------------------------------------------
@@ -275,10 +283,10 @@ Deno.serve(async (req: Request) => {
       quality_status: { long: longResult.qualityStatus, short: shortResult.qualityStatus },
     };
 
-    if (!longResult.fromCache && !longResult.skipped) {
+    if (!longResult.skipped) {
       await writeMarketSnapshot(db, today, snapshot_type, 'long', longResult.rawText, longResult.promptTokens, longResult.completionTokens, longResult.generationMs, inputSnapshot, structuredContent);
     }
-    if (!shortResult.fromCache && !shortResult.skipped) {
+    if (!shortResult.skipped) {
       await writeMarketSnapshot(db, today, snapshot_type, 'short', shortResult.rawText, shortResult.promptTokens, shortResult.completionTokens, shortResult.generationMs, inputSnapshot, structuredContent);
     }
 

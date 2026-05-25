@@ -330,6 +330,140 @@ async function checkRegimeStaleness(runDate: string): Promise<CheckResult> {
   };
 }
 
+// ─── AI health checks ─────────────────────────────────────────────────────────
+
+async function checkAINarrativeCoverage(): Promise<CheckResult> {
+  // Count scored companies
+  const { count: scoredCount, error: scoreErr } = await supabaseAdmin
+    .from("conviction_scores")
+    .select("*", { count: "exact", head: true })
+    .eq("is_current", true);
+
+  if (scoreErr) {
+    return { check: "AI Narrative Coverage", status: "WARN", detail: `Could not query conviction_scores: ${scoreErr.message}` };
+  }
+
+  const total = scoredCount ?? 0;
+  if (total === 0) {
+    return { check: "AI Narrative Coverage", status: "WARN", detail: "No scored companies found. Run score:companies first." };
+  }
+
+  // Count companies with a current company_narrative output
+  const { count: narrativeCount, error: narErr } = await supabaseAdmin
+    .from("ai_outputs")
+    .select("*", { count: "exact", head: true })
+    .eq("output_type", "company_narrative")
+    .eq("is_current", true);
+
+  if (narErr) {
+    return { check: "AI Narrative Coverage", status: "WARN", detail: `Could not query ai_outputs: ${narErr.message}` };
+  }
+
+  const covered = narrativeCount ?? 0;
+  const pct     = total > 0 ? Math.round((covered / total) * 100) : 0;
+  const detail  = `${covered}/${total} scored companies have a current narrative (${pct}% coverage).`;
+
+  if (pct === 0) {
+    return { check: "AI Narrative Coverage", status: "FAIL", detail: `${detail} Run generate:narratives.` };
+  }
+  if (pct < 80) {
+    return { check: "AI Narrative Coverage", status: "WARN", detail };
+  }
+  return { check: "AI Narrative Coverage", status: "PASS", detail };
+}
+
+async function checkAIOutputHealth(): Promise<CheckResult> {
+  // Count current outputs by quality status
+  const { data, error } = await supabaseAdmin
+    .from("ai_outputs")
+    .select("content")
+    .eq("is_current", true);
+
+  if (error) {
+    return { check: "AI Output Quality", status: "WARN", detail: `Could not query ai_outputs: ${error.message}` };
+  }
+
+  type OutputRow = { content: { quality_status?: string } | null };
+  const rows     = (data ?? []) as OutputRow[];
+  const total    = rows.length;
+  const failed   = rows.filter(r => r.content?.quality_status === "failed").length;
+  const warnings = rows.filter(r => r.content?.quality_status === "warning").length;
+  const passed   = rows.filter(r => r.content?.quality_status === "passed").length;
+
+  if (total === 0) {
+    return { check: "AI Output Quality", status: "WARN", detail: "No current AI outputs found. Run generate:narratives." };
+  }
+
+  const detail = `${total} outputs: ${passed} passed, ${warnings} warning, ${failed} failed.`;
+
+  if (failed > 0) {
+    // Build the list of failed outputs from the already-fetched rows,
+    // avoiding a second JSONB-filtered query for simplicity.
+    // We already have content but not reference_key; do a targeted second fetch.
+    const { data: examples } = await supabaseAdmin
+      .from("ai_outputs")
+      .select("output_type, reference_key")
+      .eq("is_current", true)
+      .filter("content->>quality_status", "eq", "failed")
+      .order("created_at", { ascending: false })
+      .limit(5);
+
+    type FailRow = { output_type: string; reference_key: string };
+    const items = (examples ?? [] as FailRow[]).map(
+      (r: FailRow) => `${r.output_type}: ${r.reference_key}`
+    );
+
+    return { check: "AI Output Quality", status: "FAIL", detail, count: failed, items };
+  }
+
+  if (warnings > 0) {
+    return { check: "AI Output Quality", status: "WARN", detail };
+  }
+
+  return { check: "AI Output Quality", status: "PASS", detail };
+}
+
+async function checkMarketSummaryFreshness(): Promise<CheckResult> {
+  const today = new Date().toISOString().slice(0, 10);
+
+  // Check for a current market_summary in ai_outputs for today
+  const { data, error } = await supabaseAdmin
+    .from("ai_outputs")
+    .select("reference_key, created_at, valid_until, content")
+    .eq("output_type", "market_summary")
+    .eq("is_current", true)
+    .like("reference_key", `market:${today}:%`)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    return { check: "Market Summary", status: "WARN", detail: `Could not query ai_outputs: ${error.message}` };
+  }
+
+  if (!data) {
+    return {
+      check:  "Market Summary",
+      status: "WARN",
+      detail: `No market summary generated for ${today}. Run generate:market.`,
+    };
+  }
+
+  type SumRow = { reference_key: string; created_at: string; valid_until: string | null; content: { quality_status?: string } | null };
+  const row        = data as SumRow;
+  const ageMinutes = (Date.now() - new Date(row.created_at).getTime()) / 60_000;
+  const qualStatus = row.content?.quality_status ?? "unknown";
+  const detail     = `Market summary for ${today}: quality=${qualStatus}, age=${ageMinutes.toFixed(0)}m, ttl_until=${row.valid_until?.slice(0, 16) ?? "N/A"}.`;
+
+  if (qualStatus === "failed") {
+    return { check: "Market Summary", status: "FAIL", detail: `${detail} Quality check failed — review and regenerate.` };
+  }
+  if (ageMinutes > 720) {
+    // > 12h old (generated earlier in the day, stale for late users)
+    return { check: "Market Summary", status: "WARN", detail: `${detail} Consider refreshing (>12h old).` };
+  }
+  return { check: "Market Summary", status: "PASS", detail };
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
@@ -353,6 +487,9 @@ async function main(): Promise<void> {
     checkIndexData(runDate),
     checkConvictionStaleness(),
     checkRegimeStaleness(runDate),
+    checkAINarrativeCoverage(),
+    checkAIOutputHealth(),
+    checkMarketSummaryFreshness(),
   ]);
 
   if (jsonOut) {
